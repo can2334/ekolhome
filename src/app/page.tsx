@@ -86,7 +86,7 @@ export default function Home() {
         <a href="#heritage" onClick={() => setMenuOpen(false)}>EkolHome</a>
         <a href="#contact" onClick={() => setMenuOpen(false)}>İletişim</a>
       </motion.div>
-
+      <br />
       {/* --- Hero Section --- */}
       <section className="relative h-screen flex flex-col justify-center px-6 md:px-12 pt-20">
         <motion.div style={{ opacity }}>
