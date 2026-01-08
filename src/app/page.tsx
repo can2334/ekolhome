@@ -56,13 +56,13 @@ export default function Home() {
           animate={{ opacity: 1, x: 0 }}
           className="font-light text-2xl tracking-tight"
         >
-          MIRAS
+          EkolHome
         </motion.div>
 
         {/* Desktop Menu */}
         <div className="hidden md:flex gap-12 text-xs uppercase tracking-[0.2em] font-light">
           <a href="#collections" className="hover:text-gray-400 transition-colors">Koleksiyonlar</a>
-          <a href="#heritage" className="hover:text-gray-400 transition-colors">Miras</a>
+          <a href="#heritage" className="hover:text-gray-400 transition-colors">EkolHome</a>
           <a href="#contact" className="hover:text-gray-400 transition-colors">İletişim</a>
         </div>
 
@@ -83,7 +83,7 @@ export default function Home() {
         className="fixed top-0 right-0 w-full h-screen bg-white z-40 flex flex-col justify-center items-center gap-8 text-3xl uppercase tracking-wider md:hidden"
       >
         <a href="#collections" onClick={() => setMenuOpen(false)}>Koleksiyonlar</a>
-        <a href="#heritage" onClick={() => setMenuOpen(false)}>Miras</a>
+        <a href="#heritage" onClick={() => setMenuOpen(false)}>EkolHome</a>
         <a href="#contact" onClick={() => setMenuOpen(false)}>İletişim</a>
       </motion.div>
 
@@ -97,7 +97,7 @@ export default function Home() {
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light"
             >
-              Köklü Bir Miras
+              Köklü Bir EkolHome
             </motion.div>
           </div>
 
@@ -298,7 +298,7 @@ export default function Home() {
       <footer className="border-t border-black/10 px-6 md:px-12 py-16">
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12">
           <div className="space-y-4">
-            <div className="text-2xl font-light">MIRAS</div>
+            <div className="text-2xl font-light">EkolHome</div>
             <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
               Nesiller boyu süren tekstil ustalığı ve modern tasarım anlayışı.
             </p>
@@ -307,7 +307,7 @@ export default function Home() {
           <div className="space-y-4">
             <div className="text-xs uppercase tracking-wider text-gray-400">İletişim</div>
             <div className="space-y-2 text-sm font-light text-gray-600">
-              <div>info@mirastekstil.com</div>
+              <div>info@EkolHometekstil.com</div>
               <div>+90 212 XXX XX XX</div>
             </div>
           </div>
@@ -323,7 +323,7 @@ export default function Home() {
         </div>
 
         <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
-          <div>© 2026 Miras Tekstil. Tüm hakları saklıdır.</div>
+          <div>© 2026 EkolHome Tekstil. Tüm hakları saklıdır.</div>
           <div className="flex gap-8">
             <a href="#" className="hover:text-black transition-colors">Gizlilik Politikası</a>
             <a href="#" className="hover:text-black transition-colors">Kullanım Koşulları</a>
