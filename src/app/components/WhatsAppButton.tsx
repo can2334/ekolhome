@@ -11,14 +11,24 @@ const WhatsAppChat = () => {
 
     const handleSendMessage = () => {
         const cleanMessage = message || "Merhaba!";
+        const encodedMessage = encodeURIComponent(cleanMessage);
 
-        // Senin istediğin tam yapı: web.whatsapp.com
-        // Not: Mobilde uygulama açılması için tarayıcı bunu algılar
-        const whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(cleanMessage)}&phone=${phoneNumber}`;
+        // Cihazın mobil olup olmadığını kontrol ediyoruz
+        const isMobile = /iPhone|Android/i.test(navigator.userAgent);
+
+        let whatsappUrl = "";
+
+        if (isMobile) {
+            // Mobildeysen direkt uygulamayı tetikleyen wa.me linki
+            whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+        } else {
+            // Masaüstündeysen profesyonel WhatsApp Web linki
+            whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+        }
 
         window.open(whatsappUrl, '_blank');
 
-        // Gönderdikten sonra temizlik
+        // Gönderdikten sonra formu temizle ve kapat
         setMessage("");
         setIsOpen(false);
     };
@@ -49,7 +59,7 @@ const WhatsAppChat = () => {
                                     <p className="text-[10px] text-white/80 mt-1">Çevrimiçi</p>
                                 </div>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded-full transition-colors">
+                            <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded-full transition-colors text-white">
                                 <X size={20} />
                             </button>
                         </div>
@@ -61,9 +71,9 @@ const WhatsAppChat = () => {
                                 backgroundSize: "400px"
                             }}>
                             <div className="bg-white p-3 rounded-lg rounded-tl-none shadow-sm max-w-[85%] self-start">
-                                <p className="text-[10px] text-green-700 font-bold mb-1 uppercase">Murat</p>
-                                <p className="text-xs leading-relaxed">Sizin için buradayız! Size nasıl yardımcı olabilirim?</p>
-                                <p className="text-[9px] text-gray-400 text-right mt-1">13:14</p>
+                                <p className="text-[10px] text-green-700 font-bold mb-1 uppercase">Destek Ekibi</p>
+                                <p className="text-xs leading-relaxed text-gray-800">Sizin için buradayız! Size nasıl yardımcı olabilirim?</p>
+                                <p className="text-[9px] text-gray-400 text-right mt-1">Az önce</p>
                             </div>
                         </div>
 
@@ -72,14 +82,14 @@ const WhatsAppChat = () => {
                             <input
                                 type="text"
                                 placeholder="Mesajınızı yazın..."
-                                className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-green-500 transition-all"
+                                className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-green-500 transition-all text-black"
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             />
                             <button
                                 onClick={handleSendMessage}
-                                className="bg-[#25D366] text-white p-2.5 rounded-full hover:bg-[#128C7E] transition-all active:scale-90"
+                                className="bg-[#25D366] text-white p-2.5 rounded-full hover:bg-[#128C7E] transition-all active:scale-90 flex items-center justify-center"
                             >
                                 <Send size={18} fill="currentColor" />
                             </button>
