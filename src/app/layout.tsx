@@ -6,6 +6,7 @@ import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import { usePathname } from "next/navigation";
 import WhatsAppButton from "./components/WhatsAppButton";
+import { SpeedInsights } from "@vercel/speed-insights/react"
 const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
@@ -26,6 +27,8 @@ export default function RootLayout({
 
         {!isAdminPage && <Footer />}
         {!isAdminPage && <WhatsAppButton />}
+
+        <SpeedInsights />
       </body>
     </html>
   );
