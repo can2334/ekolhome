@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Kurumsal Web Projesi
 
-## Getting Started
+Bu proje, modern web teknolojileri ve sürdürülebilir mimari prensipleri ile geliştirilmiş, yüksek performanslı bir **Next.js** uygulamasıdır. 
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🔒 Lisans ve Kullanım Koşulları
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **ÖNEMLİ:** Bu proje özel bir mülkiyettir ve tüm hakları saklıdır.
+> 
+> **Yetkili Kullanım:** Bu yazılımın kullanım, yayına alma ve yönetim yetkisi münhasıran **[BURAYA FİRMA ADINI YAZ]** şirketine aittir.
+> 
+> * Bu projenin kaynak kodları, tasarım ögeleri ve veritabanı yapısı izin alınmadan kopyalanamaz.
+> * Yetkili firma dışında üçüncü şahıslar tarafından ticari amaçla kullanılması veya dağıtılması yasaktır.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠 Kullanılan Teknolojiler
 
-## Learn More
+* **Framework:** Next.js 15+ (App Router)
+* **İçerik Yönetimi:** Sanity.io
+* **Stil & Animasyon:** Tailwind CSS & Framer Motion
+* **Yayınlama:** Vercel
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ✉️ İletişim
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Geliştirici:** [Umut Can Salman]  
+**Müşteri/Kurum:** [EKOL HOME MOBİLYA TEKSTİL TUR. TİC. LTD. ŞTİ.]
+© 2026 Umut Can Salman. Tüm Hakları Saklıdır.
