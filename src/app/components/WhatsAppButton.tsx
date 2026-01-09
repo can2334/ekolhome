@@ -7,16 +7,14 @@ const WhatsAppChat = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [message, setMessage] = useState("");
 
-    const phoneNumber = "90534321765";
+    const phoneNumber = "905343214765";
 
     const handleSendMessage = () => {
         const encodedMessage = encodeURIComponent(message || "Merhaba!");
 
-        // Bu yapı genellikle tarayıcıyı daha hızlı atlayıp uygulamayı tetikler
         const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
 
         window.open(whatsappUrl, '_blank');
-        // Mesaj gönderildikten sonra kutuyu kapatabiliriz (isteğe bağlı)
         setIsOpen(false);
         setMessage("");
     };
