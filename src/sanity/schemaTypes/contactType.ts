@@ -3,7 +3,12 @@ export const contactType = {
     title: 'İletişim Bilgileri',
     type: 'document',
     fields: [
-        { name: 'phone', title: 'Telefon No', type: 'string' },
+        {
+            name: 'phones', // İsmini çoğul yaptık
+            title: 'Telefon Numaraları',
+            type: 'array',
+            of: [{ type: 'string' }] // İçinde metin (numara) listesi tutacak
+        },
         { name: 'email', title: 'E-posta Adresi', type: 'email' },
         { name: 'address', title: 'Adres', type: 'text' },
         {

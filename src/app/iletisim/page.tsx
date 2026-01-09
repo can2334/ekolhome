@@ -8,7 +8,7 @@ const FORM_ENDPOINT = "https://formspree.io/f/mreezzkz";
 
 // Sanity'den gelecek verinin tipi
 interface ContactData {
-    phone: string;
+    phones: string[];
     email: string;
     address: string;
     mapUrl: string;
@@ -19,15 +19,14 @@ export default function Contact() {
     const [contact, setContact] = useState<ContactData | null>(null);
 
     // Sanity'den verileri çekiyoruz
-    // Sanity'den verileri çekiyoruz
     useEffect(() => {
         const fetchContact = async () => {
             const query = `*[_type == "contact"][0]{
-            phone,
-            email,
-            address,
-            mapUrl 
-        }`;
+    phones, // phone yerine phones
+    email,
+    address,
+    mapUrl 
+}`;
             const data = await client.fetch(query);
             setContact(data);
         };
@@ -79,7 +78,9 @@ export default function Contact() {
                         </div>
                         <div>
                             <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-4 border-b border-black/10 pb-2 inline-block">Telefon</h3>
-                            <p className="text-lg font-light">{contact.phone}</p>
+                            {contact.phones?.map((p, i) => (
+                                <p key={i} className="text-lg font-light">{p}</p>
+                            ))}
                         </div>
                         <div>
                             <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-4 border-b border-black/10 pb-2 inline-block">E-Mail</h3>

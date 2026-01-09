@@ -1,18 +1,33 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
-// Linkleri tek bir merkezden yönetiyoruz
 const NAV_LINKS = [
     { name: "Koleksiyonlar", href: "/#collections" },
-    { name: "Hakkımızda", href: "/about" },
+    {
+        name: "Hizmetlerimiz",
+        href: "/hizmetlerimiz",
+        subLinks: [
+            "Oturma Grubu",
+            "Kanepe Döşemeleri",
+            "Tekli Koltuk",
+            "Sandalye",
+            "Ofis Dekorasyonu",
+            "Puflar&Bench",
+            "Yatak Başlığı",
+            "Kırlent&Şezlong Minderi"
+        ]
+    },
+    { name: "Referanslar", href: "/referanslar" },
+    { name: "hakkımızda", href: "/hakkimizda" },
     { name: "İletişim", href: "/iletisim" },
 ];
 
 const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
+    const [servicesOpen, setServicesOpen] = useState(false);
 
     return (
         <>
@@ -21,51 +36,103 @@ const Navbar = () => {
                     <Link href="/" onClick={() => setMenuOpen(false)}>EkolHome</Link>
                 </div>
 
-                {/* Desktop Menu - Map ile çekiyoruz */}
-                <div className="hidden md:flex gap-12 text-xs uppercase tracking-[0.2em] font-light">
+                {/* Desktop Menu */}
+                <div className="hidden md:flex gap-12 text-xs uppercase tracking-[0.2em] font-light items-center">
                     {NAV_LINKS.map((link) => (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            className="hover:text-gray-400 transition-colors"
-                        >
-                            {link.name}
-                        </Link>
+                        <div key={link.name} className="relative group">
+                            {link.subLinks ? (
+                                <div
+                                    className="flex items-center gap-1 cursor-pointer text-black/60 hover:text-black transition-colors"
+                                    onMouseEnter={() => setServicesOpen(true)}
+                                    onMouseLeave={() => setServicesOpen(false)}
+                                >
+                                    {link.name}
+                                    <ChevronDown className={`w-3 h-3 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+
+                                    {/* Desktop Dropdown (Görseldeki liste yapısı) */}
+                                    <AnimatePresence>
+                                        {servicesOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 10 }}
+                                                className="absolute top-full left-0 mt-4 w-64 bg-white border border-black/5 shadow-xl p-6 flex flex-col gap-4 normal-case tracking-normal"
+                                            >
+                                                {link.subLinks.map((sub) => (
+                                                    <Link
+                                                        key={sub}
+                                                        href={`/hizmetlerimiz/${sub.toLowerCase().replace(/ /g, '-')}`}
+                                                        className="text-sm text-black/50 hover:text-black hover:translate-x-2 transition-all"
+                                                    >
+                                                        {sub}
+                                                    </Link>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            ) : (
+                                <Link href={link.href} className="text-black/60 hover:text-black transition-colors">
+                                    {link.name}
+                                </Link>
+                            )}
+                        </div>
                     ))}
                 </div>
 
-                <button
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    className="md:hidden relative z-[110] p-2 -mr-2"
-                >
+                <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden relative z-[110] p-2">
                     {menuOpen ? <X className="w-6 h-6 text-black" /> : <Menu className="w-6 h-6 text-black" />}
                 </button>
             </nav>
 
+            {/* Mobile Menu */}
             <AnimatePresence>
                 {menuOpen && (
                     <motion.div
-                        initial={{ x: "100%" }}
-                        animate={{ x: 0 }}
-                        exit={{ x: "100%" }}
-                        transition={{ type: "tween", duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                        className="fixed inset-0 w-full h-screen bg-white z-[90] flex flex-col justify-center items-center gap-10 md:hidden"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="fixed inset-0 w-full h-screen bg-white z-[90] flex flex-col justify-center items-center overflow-y-auto pt-20"
                     >
-                        {/* Mobile Menu - Aynı veriyi burada da Map ile çekiyoruz */}
-                        <div className="flex flex-col items-center gap-8 text-2xl font-light uppercase tracking-[0.2em]">
+                        <div className="flex flex-col items-center gap-6 text-xl font-light uppercase tracking-[0.2em]">
                             {NAV_LINKS.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    onClick={() => setMenuOpen(false)}
-                                >
-                                    {link.name}
-                                </Link>
+                                <div key={link.name} className="flex flex-col items-center">
+                                    {link.subLinks ? (
+                                        <>
+                                            <button
+                                                onClick={() => setServicesOpen(!servicesOpen)}
+                                                className="flex items-center gap-2 text-black/40"
+                                            >
+                                                {link.name} <ChevronDown className={`w-4 h-4 ${servicesOpen ? 'rotate-180' : ''}`} />
+                                            </button>
+                                            <AnimatePresence>
+                                                {servicesOpen && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        className="flex flex-col items-center gap-3 mt-4 mb-2"
+                                                    >
+                                                        {link.subLinks.map((sub) => (
+                                                            <Link
+                                                                key={sub}
+                                                                href="/hizmetlerimiz"
+                                                                className="text-sm normal-case tracking-tight text-black/60"
+                                                                onClick={() => setMenuOpen(false)}
+                                                            >
+                                                                {sub}
+                                                            </Link>
+                                                        ))}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </>
+                                    ) : (
+                                        <Link href={link.href} onClick={() => setMenuOpen(false)} className="text-black/40">
+                                            {link.name}
+                                        </Link>
+                                    )}
+                                </div>
                             ))}
-                        </div>
-
-                        <div className="absolute bottom-12 text-[10px] tracking-[0.5em] text-gray-400">
-                            EKOLHOME STUDIO © 2026
                         </div>
                     </motion.div>
                 )}
