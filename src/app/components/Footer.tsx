@@ -1,6 +1,8 @@
 import React from 'react';
 import { Instagram, Mail, Phone, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
+import Script from "next/script"; // Next.js Script bileşenini ekledik
+
 const Footer = () => {
     return (
         <footer className="border-t border-black/10 px-6 md:px-12 py-16 bg-white">
@@ -15,10 +17,8 @@ const Footer = () => {
                     </p>
                 </div>
 
-
                 {/* İletişim Bilgileri */}
                 <div className="space-y-4">
-                    {/* Başlığa Link ve İkon Ekledik */}
                     <Link
                         href="/iletisim"
                         className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gray-400 hover:text-black transition-colors"
@@ -28,7 +28,6 @@ const Footer = () => {
                     </Link>
 
                     <div className="space-y-3 text-sm font-light text-gray-600">
-                        {/* Mail Kısmı */}
                         <a
                             href="mailto:info@ekolhometekstil.com"
                             className="flex items-center gap-3 hover:text-black hover:italic transition-all"
@@ -37,7 +36,6 @@ const Footer = () => {
                             <span>info@ekolhometekstil.com</span>
                         </a>
 
-                        {/* Telefon Kısmı */}
                         <a
                             href="tel:+905343214765"
                             className="flex items-center gap-3 hover:text-black hover:italic transition-all"
@@ -48,13 +46,12 @@ const Footer = () => {
                     </div>
                 </div>
 
-
                 {/* Sosyal Medya */}
                 <div className="space-y-4">
                     <div className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Takip Edin</div>
                     <div className="flex gap-6 items-center">
                         <a
-                            href="https://www.instagram.com/ekolhome" // Buraya kendi linkini yazarsın
+                            href="https://www.instagram.com/ekolhome"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="group flex items-center gap-2 text-sm font-light hover:text-black transition-all"
@@ -69,11 +66,26 @@ const Footer = () => {
             {/* Alt Bilgi ve Yasal Haklar */}
             <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-gray-400">
                 <div>© 2026 EkolHome Tekstil. Tüm hakları saklıdır.</div>
-                <div className="flex gap-8">
-                    <a href="#" className="hover:text-black transition-colors">Gizlilik Politikası</a>
+                <div className="flex gap-8 items-center">
+                    {/* Iubenda Gizlilik Politikası Butonu */}
+                    <a
+                        href="https://www.iubenda.com/privacy-policy/32672466"
+                        className="iubenda-white iubenda-noiframe iubenda-embed hover:text-black transition-colors"
+                        title="Privacy Policy"
+                    >
+                        Gizlilik Politikası
+                    </a>
+
                     <a href="#" className="hover:text-black transition-colors">Kullanım Koşulları</a>
                 </div>
             </div>
+
+            {/* Iubenda Scriptini Next.js yapısına uygun ekliyoruz */}
+            <Script id="iubenda-setup" strategy="afterInteractive">
+                {`
+                    (function (w,d) {var loader = function () {var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src="https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener("load", loader, false);}else if(w.attachEvent){w.attachEvent("onload", loader);}else{w.onload = loader;}})(window, document);
+                `}
+            </Script>
         </footer>
     );
 };
