@@ -2,6 +2,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef } from "react";
 import Lenis from "lenis";
+import Link from "next/link";
 
 export default function About() {
     const containerRef = useRef(null);
@@ -25,7 +26,7 @@ export default function About() {
 
     return (
         <main ref={containerRef} className="bg-[#FAF9F6] text-[#1a1a1a] min-h-screen">
-
+            <br />
             {/* --- Section 1: Intro (The Philosophy) --- */}
             <section className="h-screen flex flex-col justify-center px-8 md:px-24">
                 <motion.span
@@ -33,7 +34,7 @@ export default function About() {
                     animate={{ opacity: 1 }}
                     className="text-[10px] uppercase tracking-[0.5em] text-gray-400 mb-8"
                 >
-                    EkolHomeımız & Vizyonumuz
+                    EkolHome'ımız & Vizyonumuz
                 </motion.span>
 
                 <h1 className="text-[10vw] md:text-[8vw] font-bold leading-[0.9] uppercase tracking-tighter">
@@ -103,9 +104,11 @@ export default function About() {
             <section className="h-screen flex items-center justify-center bg-black text-white px-8">
                 <div className="text-center space-y-12">
                     <h2 className="text-5xl md:text-7xl font-light tracking-tighter">Birlikte Yeni Hikayeler <br /> <span className="italic font-serif">Dokuyalım.</span></h2>
-                    <button className="border border-white/20 px-12 py-5 uppercase text-[10px] tracking-[0.3em] hover:bg-white hover:text-black transition-all duration-500">
-                        Kataloğumuzu İnceleyin
-                    </button>
+                    <Link href="/katalog">
+                        <button className="border border-white/20 px-12 py-5 uppercase text-[10px] tracking-[0.3em] hover:bg-white hover:text-black transition-all duration-500">
+                            Kataloğumuzu İnceleyin
+                        </button>
+                    </Link>
                 </div>
             </section>
         </main>

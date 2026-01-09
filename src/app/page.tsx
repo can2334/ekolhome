@@ -88,12 +88,17 @@ export default function Home() {
               her dokuşta hikaye anlatan kumaşlar yaratıyoruz.
             </p>
 
-            <div className="flex items-center gap-4 group cursor-pointer">
-              <span className="text-xs uppercase tracking-[0.25em] font-light">Koleksiyonu Keşfet</span>
+            <Link
+              href="/404"
+              className="flex items-center gap-4 group cursor-pointer w-fit"
+            >
+              <span className="text-xs uppercase tracking-[0.25em] font-light">
+                Koleksiyonu Keşfet
+              </span>
               <div className="w-10 h-10 rounded-full border border-black/20 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all">
                 <ArrowUpRight className="w-4 h-4" />
               </div>
-            </div>
+            </Link>
           </motion.div>
         </motion.div>
 
@@ -163,12 +168,15 @@ export default function Home() {
                 {collection.desc}
               </p>
 
-              <div className="flex items-center gap-3 group cursor-pointer pt-4">
+              <Link
+                href="/404"
+                className="flex items-center gap-3 group cursor-pointer pt-4 w-fit"
+              >
                 <span className="text-xs uppercase tracking-[0.25em] font-light border-b border-black/0 group-hover:border-black/100 transition-all pb-1">
                   Detayları İncele
                 </span>
                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-              </div>
+              </Link>
             </div>
           </motion.div>
         ))}
