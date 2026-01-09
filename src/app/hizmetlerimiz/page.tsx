@@ -1,26 +1,46 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
+import { client } from '@/sanity/lib/client'; // Sanity client'ını import et
+import { urlFor } from '@/sanity/lib/image';  // Image helper'ını import et
 
-const HIZMETLER = [
-    { title: "Oturma Grubu", image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?q=80&w=2070", slug: "oturma-grubu", desc: "Yaşam alanlarınıza konfor ve estetiği bir arada sunan özel tasarımlar." },
-    { title: "Kanepe Döşemeleri", image: "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=2070", slug: "kanepe-dosemeleri", desc: "Eski mobilyalarınıza hayat veren, modern ve klasik kumaş seçenekleri." },
-    { title: "Tekli Koltuk", image: "https://images.unsplash.com/photo-1592078615290-033ee584e267?q=80&w=1964", slug: "tekli-koltuk", desc: "Köşenizde size özel bir dünya yaratan ergonomik ve şık berjerler." },
-    { title: "Sandalye", image: "https://images.unsplash.com/photo-1503602642458-232111445657?q=80&w=1974", slug: "sandalye", desc: "Yemek odalarından ofislere kadar her mekana uygun oturma çözümleri." },
-    { title: "Ofis Dekorasyonu", image: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069", slug: "ofis-dekorasyonu", desc: "Profesyonel çalışma alanları için ilham verici ve prestijli tasarımlar." },
-    { title: "Puflar & Bench", image: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?q=80&w=2070", slug: "puflar-ve-bench", desc: "Mekanın tamamlayıcı parçaları; fonksiyonel ve dekoratif detaylar." },
-    { title: "Yatak Başlığı", image: "https://images.unsplash.com/photo-1505691723518-36a5ac3be353?q=80&w=2070", slug: "yatak-basligi", desc: "Yatak odanıza lüks bir otel konforu ve şıklığı katan dokunuşlar." },
-    { title: "Kırlent & Şezlong Minderi", image: "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?q=80&w=2070", slug: "kirlent-ve-sezlong-minderi", desc: "Dış mekan ve dekorasyonda konforu artıran yumuşak detaylar." },
-];
+// Interface tanımı (TypeScript kullanıyorsan)
+interface Service {
+    title: string;
+    slug: { current: string };
+    image: any;
+    desc: string;
+}
 
 export default function HizmetlerimizPage() {
+    const [services, setServices] = useState<Service[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Sanity'den veriyi çeken sorgu
+        const fetchServices = async () => {
+            const query = `*[_type == "service"] | order(order asc) {
+                title,
+                slug,
+                image,
+                desc
+            }`;
+            const data = await client.fetch(query);
+            setServices(data);
+            setLoading(false);
+        };
+
+        fetchServices();
+    }, []);
+
+    if (loading) return <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>;
+
     return (
         <main className="min-h-screen bg-white pt-32 pb-20 px-6">
-            {/* Üst Başlık Alanı */}
             <section className="max-w-7xl mx-auto mb-20">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -35,35 +55,36 @@ export default function HizmetlerimizPage() {
                         </h1>
                     </div>
                     <p className="text-gray-500 max-w-sm text-sm leading-relaxed mb-2">
-                        EkolHome olarak, mobilyanın sadece bir eşya değil, mekanı tamamlayan bir ruh olduğuna inanıyoruz. Sekiz farklı kategoride uzman zanaatkarlarımızla hizmetinizdeyiz.
+                        EkolHome olarak, mobilyanın sadece bir eşya değil, mekanı tamamlayan bir ruh olduğuna inanıyoruz.
                     </p>
                 </motion.div>
                 <div className="w-full h-[1px] bg-gray-100 mt-12" />
             </section>
 
-            {/* Asimetrik Grid Galeri */}
             <section className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-x-16 lg:gap-y-24">
-                    {HIZMETLER.map((service, index) => (
+                    {services.map((service, index) => (
                         <motion.div
-                            key={service.slug}
+                            key={service.slug.current}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
-                            className={`group cursor-pointer ${index % 3 === 1 ? 'lg:mt-16' : ''}`} // Asimetrik görünüm için orta sütunu aşağı kaydırır
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ delay: index * 0.05 }}
+                            className={`group cursor-pointer ${index % 3 === 1 ? 'lg:mt-16' : ''}`}
                         >
-                            <Link href={`/hizmetlerimiz/${service.slug}`}>
-                                <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 mb-6">
+                            <Link href={`/hizmetlerimiz/${service.slug.current}`}>
+                                <div className="relative aspect-[4/5] overflow-hidden bg-gray-50 mb-6">
                                     <Image
-                                        src={service.image}
+                                        // Sanity Image Helper kullanımı
+                                        src={urlFor(service.image).url()}
                                         alt={service.title}
                                         fill
-                                        className="object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110 grayscale-[50%] group-hover:grayscale-0"
+                                        priority={index < 3}
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        className="object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-105 grayscale-[50%] group-hover:grayscale-0"
                                     />
-                                    {/* Overlay */}
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-500 flex items-center justify-center">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100 transition-all duration-500">
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500 flex items-center justify-center">
+                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100 transition-all duration-500 shadow-sm">
                                             <ArrowUpRight className="text-black" size={20} />
                                         </div>
                                     </div>
@@ -79,7 +100,7 @@ export default function HizmetlerimizPage() {
                                     </p>
                                     <div className="pt-4 flex items-center gap-2">
                                         <div className="h-[1px] w-0 group-hover:w-8 bg-black transition-all duration-500" />
-                                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-0 group-hover:opacity-100 transition-all duration-500">Koleksiyonu Gör</span>
+                                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-0 group-hover:opacity-100 transition-all duration-500">İncele</span>
                                     </div>
                                 </div>
                             </Link>
