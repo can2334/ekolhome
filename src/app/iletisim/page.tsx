@@ -1,139 +1,121 @@
 "use client";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Globe } from "lucide-react";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import contactData from "../data/contactInfo.json";
+
+// Senin Formspree linkin
+const FORM_ENDPOINT = "https://formspree.io/f/mreezzkz";
 
 export default function Contact() {
+    const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setStatus("sending");
+
+        const formData = new FormData(e.currentTarget);
+
+        // Formspree'ye verileri gönderiyoruz
+        try {
+            const res = await fetch(FORM_ENDPOINT, {
+                method: 'POST',
+                body: formData, // Formspree doğrudan FormData kabul eder
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (res.ok) {
+                setStatus("success");
+                (e.target as HTMLFormElement).reset();
+                setTimeout(() => setStatus("idle"), 5000);
+            } else {
+                setStatus("error");
+            }
+        } catch (err) {
+            console.error("Formspree Hatası:", err);
+            setStatus("error");
+        }
+    };
+
     return (
-        <main className="bg-[#FAF9F6] text-[#1a1a1a]">
-            <Navbar />
+        <main className="bg-[#FAF9F6] text-[#1a1a1a] min-h-screen">
+            <div className="pt-32 pb-20 max-w-7xl mx-auto px-6 md:px-12">
+                <div className="grid md:grid-cols-2 gap-16 items-start">
 
-            {/* --- Header Section --- */}
-            <section className="pt-40 pb-20 px-6 md:px-12">
-                <div className="max-w-6xl mx-auto">
-                    <motion.span
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-[10px] uppercase tracking-[0.5em] text-gray-400 block mb-6"
-                    >
-                        Bize Ulaşın
-                    </motion.span>
-                    <motion.h1
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-[12vw] md:text-[8vw] font-light leading-none tracking-tighter"
-                    >
-                        Yeni Bir <br />
-                        <span className="italic font-serif text-gray-400">Başlangıç</span>
-                    </motion.h1>
-                </div>
-            </section>
-
-            {/* --- Content Section --- */}
-            <section className="pb-32 px-6 md:px-12">
-                <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-20">
-
-                    {/* Sol: İletişim Bilgileri */}
+                    {/* Sol: İletişim Detayları */}
                     <motion.div
-                        initial={{ opacity: 0, x: -30 }}
+                        initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="space-y-12"
+                        className="space-y-10"
                     >
-                        <div className="space-y-8">
-                            <p className="text-xl text-gray-600 font-light leading-relaxed max-w-md">
-                                Atölyemizi ziyaret etmek veya projeleriniz için özel çözümlerimizi görüşmek üzere sizi bekliyoruz.
-                            </p>
+                        <div>
+                            <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-4 border-b border-black/10 pb-2 inline-block">Adres</h3>
+                            <p className="text-lg font-light leading-relaxed max-w-sm">{contactData.address}</p>
                         </div>
-
-                        <div className="grid gap-8">
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full border border-black/5 flex items-center justify-center shrink-0">
-                                    <MapPin className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Adres</h4>
-                                    <p className="text-sm font-light">Tekstil Merkezi, No:42 <br />Nişantaşı, İstanbul</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full border border-black/5 flex items-center justify-center shrink-0">
-                                    <Phone className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Telefon</h4>
-                                    <p className="text-sm font-light">+90 (212) 555 00 00</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full border border-black/5 flex items-center justify-center shrink-0">
-                                    <Mail className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">E-Posta</h4>
-                                    <p className="text-sm font-light">hello@ekolhome.studio</p>
-                                </div>
-                            </div>
+                        <div>
+                            <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-4 border-b border-black/10 pb-2 inline-block">Telefon</h3>
+                            {contactData.phones.map((p, i) => <p key={i} className="text-lg font-light">{p}</p>)}
+                        </div>
+                        <div>
+                            <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-4 border-b border-black/10 pb-2 inline-block">E-Mail</h3>
+                            <p className="text-lg font-light text-gray-600">{contactData.email}</p>
                         </div>
                     </motion.div>
 
-                    {/* Sağ: Modern Form */}
+                    {/* Sağ: Form */}
                     <motion.div
-                        initial={{ opacity: 0, x: 30 }}
+                        initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="bg-white p-8 md:p-12 shadow-sm border border-black/[0.02]"
+                        className="bg-white p-8 border border-black/5 shadow-sm"
                     >
-                        <form className="space-y-8">
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] uppercase tracking-widest text-gray-400">Adınız</label>
-                                    <input type="text" className="w-full bg-transparent border-b border-gray-200 py-2 focus:border-black outline-none transition-colors font-light" placeholder="John Doe" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] uppercase tracking-widest text-gray-400">E-Posta</label>
-                                    <input type="email" className="w-full bg-transparent border-b border-gray-200 py-2 focus:border-black outline-none transition-colors font-light" placeholder="john@example.com" />
-                                </div>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-4">
+                                <input
+                                    name="name"
+                                    required
+                                    placeholder="Adınız"
+                                    className="w-full bg-[#f7f7f7] border-none px-4 py-4 text-xs outline-none focus:ring-1 focus:ring-black transition-all"
+                                />
+                                <input
+                                    name="email"
+                                    type="email"
+                                    required
+                                    placeholder="E-Mail"
+                                    className="w-full bg-[#f7f7f7] border-none px-4 py-4 text-xs outline-none focus:ring-1 focus:ring-black transition-all"
+                                />
+                                <textarea
+                                    name="message"
+                                    rows={4}
+                                    required
+                                    placeholder="Mesajınız"
+                                    className="w-full bg-[#f7f7f7] border-none px-4 py-4 text-xs outline-none focus:ring-1 focus:ring-black transition-all resize-none"
+                                />
                             </div>
-
-                            <div className="space-y-2">
-                                <label className="text-[10px] uppercase tracking-widest text-gray-400">Konu</label>
-                                <select className="w-full bg-transparent border-b border-gray-200 py-2 focus:border-black outline-none transition-colors font-light appearance-none">
-                                    <option>Özel Proje Talebi</option>
-                                    <option>Toptan Satış</option>
-                                    <option>Genel Bilgi</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-[10px] uppercase tracking-widest text-gray-400">Mesajınız</label>
-                                <textarea rows={4} className="w-full bg-transparent border-b border-gray-200 py-2 focus:border-black outline-none transition-colors font-light resize-none" placeholder="Hayalinizdeki projeden bahsedin..." />
-                            </div>
-
-                            <button className="w-full py-5 bg-black text-white text-[10px] uppercase tracking-[0.3em] hover:bg-gray-800 transition-all duration-500 overflow-hidden group relative">
-                                <span className="relative z-10">Gönder</span>
-                                <div className="absolute inset-0 bg-gray-700 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                            <button
+                                type="submit"
+                                disabled={status === "sending"}
+                                className="w-full bg-[#d9a066] hover:bg-black text-white py-4 text-[10px] uppercase tracking-[0.4em] font-medium transition-all duration-500 disabled:bg-gray-400"
+                            >
+                                {status === "sending" ? "GÖNDERİLİYOR..." : "GÖNDER"}
                             </button>
+
+                            {status === "success" && <p className="text-[10px] text-green-600 text-center uppercase tracking-widest mt-4">Mesajınız başarıyla gönderildi!</p>}
+                            {status === "error" && <p className="text-[10px] text-red-600 text-center uppercase tracking-widest mt-4">Bir sorun oluştu, lütfen tekrar deneyin.</p>}
                         </form>
                     </motion.div>
-
                 </div>
-            </section>
 
-            {/* --- Map Placeholder / Visual --- */}
-            <section className="h-[50vh] bg-gray-200 grayscale contrast-125 overflow-hidden">
-                <img
-                    src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=1500"
-                    className="w-full h-full object-cover opacity-50"
-                    alt="Istanbul Location"
-                />
-            </section>
-
-            <Footer />
+                {/* Alt Kısım: Harita */}
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="mt-20 w-full h-[450px] border border-black/5 overflow-hidden shadow-sm"
+                >
+                    <iframe src={contactData.mapUrl} className="w-full h-full" style={{ border: 0 }} allowFullScreen loading="lazy" />
+                </motion.div>
+            </div>
         </main>
     );
 }
