@@ -1,4 +1,8 @@
 import { contactType } from './contactType'
 import { referenceType } from './referenceType'
 import { serviceType } from './serviceType'
-export const schemaTypes = [contactType, referenceType, serviceType]
+import { katalogType } from './katalogType'
+
+
+
+export const schemaTypes = [contactType, referenceType, serviceType, katalogType]
