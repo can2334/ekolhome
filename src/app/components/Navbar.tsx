@@ -1,33 +1,43 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
-
-const NAV_LINKS = [
-    { name: "Koleksiyonlar", href: "/#collections" },
-    {
-        name: "Hizmetlerimiz",
-        href: "/hizmetlerimiz",
-        subLinks: [
-            "Oturma Grubu",
-            "Kanepe Döşemeleri",
-            "Tekli Koltuk",
-            "Sandalye",
-            "Ofis Dekorasyonu",
-            "Puflar&Bench",
-            "Yatak Başlığı",
-            "Kırlent&Şezlong Minderi"
-        ]
-    },
-    { name: "Referanslar", href: "/referanslar" },
-    { name: "hakkımızda", href: "/hakkimizda" },
-    { name: "İletişim", href: "/iletisim" },
-];
+import { client } from "@/sanity/lib/client";
 
 const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [servicesOpen, setServicesOpen] = useState(false);
+    const [dynamicServices, setDynamicServices] = useState<{ name: string; href: string; id: string }[]>([]);
+
+    // Sanity'den hizmetleri otomatik çekiyoruz
+    useEffect(() => {
+        const fetchServices = async () => {
+            // _id'yi de çekiyoruz ki key hatasını tamamen engelleyelim
+            const query = `*[_type == "service"]{ _id, title, "slug": slug.current }`;
+            const data = await client.fetch(query);
+            const formattedServices = data.map((service: any) => ({
+                id: service._id,
+                name: service.title,
+                href: `/hizmetlerimiz/${service.slug}`
+            }));
+            setDynamicServices(formattedServices);
+        };
+
+        fetchServices();
+    }, []);
+
+    const NAV_LINKS = [
+        { name: "Koleksiyonlar", href: "/katalog" },
+        {
+            name: "Hizmetlerimiz",
+            href: "/hizmetlerimiz",
+            subLinks: dynamicServices
+        },
+        { name: "Referanslar", href: "/referanslar" },
+        { name: "hakkımızda", href: "/hakkimizda" },
+        { name: "İletişim", href: "/iletisim" },
+    ];
 
     return (
         <>
@@ -38,7 +48,6 @@ const Navbar = () => {
 
                 {/* Desktop Menu */}
                 <div className="hidden md:flex gap-12 text-xs uppercase tracking-[0.2em] font-light items-center">
-                    {/* DÜZELTİLEN YER: Burası NAV_LINKS olmalıydı */}
                     {NAV_LINKS.map((link) => (
                         <div
                             key={link.name}
@@ -67,11 +76,11 @@ const Navbar = () => {
                                             >
                                                 {link.subLinks.map((sub) => (
                                                     <Link
-                                                        key={sub}
-                                                        href={`/hizmetlerimiz/${sub.toLowerCase().replace(/ /g, '-').replace(/&/g, 've')}`}
+                                                        key={sub.id} // Benzersiz ID kullanıldı
+                                                        href={sub.href}
                                                         className="text-sm text-black/50 hover:text-black hover:translate-x-2 transition-all"
                                                     >
-                                                        {sub}
+                                                        {sub.name}
                                                     </Link>
                                                 ))}
                                             </motion.div>
@@ -102,7 +111,6 @@ const Navbar = () => {
                         className="fixed inset-0 w-full h-screen bg-white z-[90] flex flex-col justify-center items-center overflow-y-auto pt-20"
                     >
                         <div className="flex flex-col items-center gap-6 text-xl font-light uppercase tracking-[0.2em]">
-                            {/* DÜZELTİLEN YER: Burası NAV_LINKS olmalıydı */}
                             {NAV_LINKS.map((link) => (
                                 <div key={link.name} className="flex flex-col items-center">
                                     {link.subLinks ? (
@@ -130,12 +138,12 @@ const Navbar = () => {
                                                     >
                                                         {link.subLinks.map((sub) => (
                                                             <Link
-                                                                key={sub}
-                                                                href={`/hizmetlerimiz/${sub.toLowerCase().replace(/ /g, '-').replace(/&/g, 've')}`}
+                                                                key={sub.id} // Benzersiz ID kullanıldı
+                                                                href={sub.href}
                                                                 className="text-sm normal-case tracking-tight text-black/60"
                                                                 onClick={() => setMenuOpen(false)}
                                                             >
-                                                                {sub}
+                                                                {sub.name}
                                                             </Link>
                                                         ))}
                                                     </motion.div>
