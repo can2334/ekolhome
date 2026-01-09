@@ -7,6 +7,7 @@ import Navbar from "./components/Navbar";
 import { usePathname } from "next/navigation";
 import WhatsAppButton from "./components/WhatsAppButton";
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import { Analytics } from "@vercel/analytics/react"
 const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
@@ -29,6 +30,7 @@ export default function RootLayout({
         {!isAdminPage && <WhatsAppButton />}
 
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
