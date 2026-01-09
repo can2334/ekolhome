@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import Lenis from "lenis";
-
+import Link from "next/link";
 const COLLECTIONS = [
   {
     id: "01",
@@ -247,12 +247,19 @@ export default function Home() {
           </h2>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="px-8 py-4 bg-black text-white text-xs uppercase tracking-[0.25em] hover:bg-gray-800 transition-colors">
-              İletişime Geç
-            </button>
-            <button className="px-8 py-4 border border-black text-xs uppercase tracking-[0.25em] hover:bg-black hover:text-white transition-colors">
-              Katalog İndir
-            </button>
+            {/* İletişime Geç */}
+            <Link href="/iletisim" className="w-full sm:w-auto text-center">
+              <button className="w-full px-8 py-4 bg-black text-white text-xs uppercase tracking-[0.25em] hover:bg-gray-800 transition-colors">
+                İletişime Geç
+              </button>
+            </Link>
+
+            {/* Kataloğu İncele */}
+            <Link href="/katalog" className="w-full sm:w-auto text-center">
+              <button className="w-full px-8 py-4 border border-black text-xs uppercase tracking-[0.25em] hover:bg-black hover:text-white transition-colors">
+                Kataloğu İncele
+              </button>
+            </Link>
           </div>
         </motion.div>
       </section>

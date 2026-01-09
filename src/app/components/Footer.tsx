@@ -1,5 +1,6 @@
 import React from 'react';
-
+import { Instagram, Mail, Phone, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 const Footer = () => {
     return (
         <footer className="border-t border-black/10 px-6 md:px-12 py-16 bg-white">
@@ -14,22 +15,53 @@ const Footer = () => {
                     </p>
                 </div>
 
+
                 {/* İletişim Bilgileri */}
                 <div className="space-y-4">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-gray-400">İletişim</div>
-                    <div className="space-y-2 text-sm font-light text-gray-600">
-                        <div className="hover:italic cursor-pointer transition-all">info@ekolhometekstil.com</div>
-                        <div className="hover:italic cursor-pointer transition-all">+90 212 XXX XX XX</div>
+                    {/* Başlığa Link ve İkon Ekledik */}
+                    <Link
+                        href="/iletisim"
+                        className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gray-400 hover:text-black transition-colors"
+                    >
+                        İletişim
+                        <ArrowUpRight size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </Link>
+
+                    <div className="space-y-3 text-sm font-light text-gray-600">
+                        {/* Mail Kısmı */}
+                        <a
+                            href="mailto:info@ekolhometekstil.com"
+                            className="flex items-center gap-3 hover:text-black hover:italic transition-all"
+                        >
+                            <Mail size={14} className="text-gray-400" />
+                            <span>info@ekolhometekstil.com</span>
+                        </a>
+
+                        {/* Telefon Kısmı */}
+                        <a
+                            href="tel:+905343214765"
+                            className="flex items-center gap-3 hover:text-black hover:italic transition-all"
+                        >
+                            <Phone size={14} className="text-gray-400" />
+                            <span>+90 534 321 47 65</span>
+                        </a>
                     </div>
                 </div>
 
+
                 {/* Sosyal Medya */}
                 <div className="space-y-4">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Takip Edin</div>
-                    <div className="flex gap-6 text-sm font-light">
-                        <a href="#" className="hover:italic transition-all">Instagram</a>
-                        <a href="#" className="hover:italic transition-all">LinkedIn</a>
-                        <a href="#" className="hover:italic transition-all">Pinterest</a>
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Takip Edin</div>
+                    <div className="flex gap-6 items-center">
+                        <a
+                            href="https://www.instagram.com/ekolhome" // Buraya kendi linkini yazarsın
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center gap-2 text-sm font-light hover:text-black transition-all"
+                        >
+                            <Instagram size={18} className="text-gray-400 group-hover:text-black transition-colors" />
+                            <span className="group-hover:italic">Instagram</span>
+                        </a>
                     </div>
                 </div>
             </div>
