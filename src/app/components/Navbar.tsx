@@ -38,30 +38,37 @@ const Navbar = () => {
 
                 {/* Desktop Menu */}
                 <div className="hidden md:flex gap-12 text-xs uppercase tracking-[0.2em] font-light items-center">
+                    {/* DÜZELTİLEN YER: Burası NAV_LINKS olmalıydı */}
                     {NAV_LINKS.map((link) => (
-                        <div key={link.name} className="relative group">
+                        <div
+                            key={link.name}
+                            className="relative group"
+                            onMouseEnter={() => link.subLinks && setServicesOpen(true)}
+                            onMouseLeave={() => link.subLinks && setServicesOpen(false)}
+                        >
                             {link.subLinks ? (
-                                <div
-                                    className="flex items-center gap-1 cursor-pointer text-black/60 hover:text-black transition-colors"
-                                    onMouseEnter={() => setServicesOpen(true)}
-                                    onMouseLeave={() => setServicesOpen(false)}
-                                >
-                                    {link.name}
-                                    <ChevronDown className={`w-3 h-3 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+                                <div className="flex items-center gap-1">
+                                    <Link
+                                        href={link.href}
+                                        className="text-black/60 hover:text-black transition-colors py-2"
+                                    >
+                                        {link.name}
+                                    </Link>
 
-                                    {/* Desktop Dropdown (Görseldeki liste yapısı) */}
+                                    <ChevronDown className={`w-3 h-3 text-black/40 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+
                                     <AnimatePresence>
                                         {servicesOpen && (
                                             <motion.div
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: 10 }}
-                                                className="absolute top-full left-0 mt-4 w-64 bg-white border border-black/5 shadow-xl p-6 flex flex-col gap-4 normal-case tracking-normal"
+                                                className="absolute top-full left-0 mt-2 w-64 bg-white border border-black/5 shadow-xl p-6 flex flex-col gap-4 normal-case tracking-normal"
                                             >
                                                 {link.subLinks.map((sub) => (
                                                     <Link
                                                         key={sub}
-                                                        href={`/hizmetlerimiz/${sub.toLowerCase().replace(/ /g, '-')}`}
+                                                        href={`/hizmetlerimiz/${sub.toLowerCase().replace(/ /g, '-').replace(/&/g, 've')}`}
                                                         className="text-sm text-black/50 hover:text-black hover:translate-x-2 transition-all"
                                                     >
                                                         {sub}
@@ -95,27 +102,36 @@ const Navbar = () => {
                         className="fixed inset-0 w-full h-screen bg-white z-[90] flex flex-col justify-center items-center overflow-y-auto pt-20"
                     >
                         <div className="flex flex-col items-center gap-6 text-xl font-light uppercase tracking-[0.2em]">
+                            {/* DÜZELTİLEN YER: Burası NAV_LINKS olmalıydı */}
                             {NAV_LINKS.map((link) => (
                                 <div key={link.name} className="flex flex-col items-center">
                                     {link.subLinks ? (
                                         <>
-                                            <button
-                                                onClick={() => setServicesOpen(!servicesOpen)}
-                                                className="flex items-center gap-2 text-black/40"
-                                            >
-                                                {link.name} <ChevronDown className={`w-4 h-4 ${servicesOpen ? 'rotate-180' : ''}`} />
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <Link
+                                                    href={link.href}
+                                                    onClick={() => setMenuOpen(false)}
+                                                    className="text-black/40"
+                                                >
+                                                    {link.name}
+                                                </Link>
+                                                <button onClick={() => setServicesOpen(!servicesOpen)}>
+                                                    <ChevronDown className={`w-6 h-6 text-black/40 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
+                                                </button>
+                                            </div>
+
                                             <AnimatePresence>
                                                 {servicesOpen && (
                                                     <motion.div
                                                         initial={{ height: 0, opacity: 0 }}
                                                         animate={{ height: "auto", opacity: 1 }}
-                                                        className="flex flex-col items-center gap-3 mt-4 mb-2"
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        className="flex flex-col items-center gap-3 mt-4 mb-2 overflow-hidden"
                                                     >
                                                         {link.subLinks.map((sub) => (
                                                             <Link
                                                                 key={sub}
-                                                                href="/hizmetlerimiz"
+                                                                href={`/hizmetlerimiz/${sub.toLowerCase().replace(/ /g, '-').replace(/&/g, 've')}`}
                                                                 className="text-sm normal-case tracking-tight text-black/60"
                                                                 onClick={() => setMenuOpen(false)}
                                                             >
