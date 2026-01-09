@@ -27,6 +27,9 @@ Bu proje, modern web teknolojileri ve sürdürülebilir mimari prensipleri ile g
 
 ## ✉️ İletişim
 
-**Geliştirici:** [Umut Can Salman]  
-**Müşteri/Kurum:** [EKOL HOME MOBİLYA TEKSTİL TUR. TİC. LTD. ŞTİ.]
+**Geliştirici:** Umut Can Salman
+**Müşteri/Kurum:** EKOL HOME MOBİLYA TEKSTİL TUR. TİC. LTD. ŞTİ.
+
+---
+
 © 2026 Umut Can Salman. Tüm Hakları Saklıdır.
