@@ -49,43 +49,6 @@ export default function Home() {
   return (
     <main className="bg-white text-black selection:bg-black selection:text-white overflow-x-hidden">
 
-      {/* --- Navigation --- */}
-      <nav className="fixed top-0 w-full px-6 md:px-12 py-6 flex justify-between items-center z-50 bg-white/80 backdrop-blur-md border-b border-black/5">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="font-light text-2xl tracking-tight"
-        >
-          EkolHome
-        </motion.div>
-
-        {/* Desktop Menu */}
-        <div className="hidden md:flex gap-12 text-xs uppercase tracking-[0.2em] font-light">
-          <a href="#collections" className="hover:text-gray-400 transition-colors">Koleksiyonlar</a>
-          <a href="#heritage" className="hover:text-gray-400 transition-colors">EkolHome</a>
-          <a href="#contact" className="hover:text-gray-400 transition-colors">İletişim</a>
-        </div>
-
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden w-10 h-10 flex items-center justify-center"
-        >
-          {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </nav>
-
-      {/* Mobile Menu */}
-      <motion.div
-        initial={false}
-        animate={{ x: menuOpen ? 0 : "100%" }}
-        transition={{ type: "tween", duration: 0.3 }}
-        className="fixed top-0 right-0 w-full h-screen bg-white z-40 flex flex-col justify-center items-center gap-8 text-3xl uppercase tracking-wider md:hidden"
-      >
-        <a href="#collections" onClick={() => setMenuOpen(false)}>Koleksiyonlar</a>
-        <a href="#heritage" onClick={() => setMenuOpen(false)}>EkolHome</a>
-        <a href="#contact" onClick={() => setMenuOpen(false)}>İletişim</a>
-      </motion.div>
       <br />
       {/* --- Hero Section --- */}
       <section className="relative h-screen flex flex-col justify-center px-6 md:px-12 pt-20">
@@ -294,42 +257,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* --- Footer --- */}
-      <footer className="border-t border-black/10 px-6 md:px-12 py-16">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12">
-          <div className="space-y-4">
-            <div className="text-2xl font-light">EkolHome</div>
-            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
-              Nesiller boyu süren tekstil ustalığı ve modern tasarım anlayışı.
-            </p>
-          </div>
 
-          <div className="space-y-4">
-            <div className="text-xs uppercase tracking-wider text-gray-400">İletişim</div>
-            <div className="space-y-2 text-sm font-light text-gray-600">
-              <div>info@EkolHometekstil.com</div>
-              <div>+90 212 XXX XX XX</div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="text-xs uppercase tracking-wider text-gray-400">Takip Edin</div>
-            <div className="flex gap-6 text-sm font-light">
-              <a href="#" className="hover:text-gray-400 transition-colors">Instagram</a>
-              <a href="#" className="hover:text-gray-400 transition-colors">LinkedIn</a>
-              <a href="#" className="hover:text-gray-400 transition-colors">Pinterest</a>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
-          <div>© 2026 EkolHome Tekstil. Tüm hakları saklıdır.</div>
-          <div className="flex gap-8">
-            <a href="#" className="hover:text-black transition-colors">Gizlilik Politikası</a>
-            <a href="#" className="hover:text-black transition-colors">Kullanım Koşulları</a>
-          </div>
-        </div>
-      </footer>
 
     </main>
   );

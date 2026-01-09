@@ -56,3 +56,17 @@ html.lenis {
 .lenis.lenis-stopped {
   overflow: hidden;
 }
+
+/* Arka plana çok hafif bir kumaş/kumlanma dokusu verir */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("https://res.cloudinary.com/dzv9v4m9v/image/upload/v1645100000/noise_v1.png");
+}
