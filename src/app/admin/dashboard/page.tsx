@@ -1,3 +1,4 @@
+// admmin/dashboard
 "use client";
 
 import { useEffect } from "react";
@@ -30,31 +31,10 @@ export default function AdminDashboard() {
 
             <main className="flex-1 flex flex-col">
                 {/* Header */}
-                <header className="h-24 border-b border-white/5 flex items-center justify-between px-12 bg-[#0A0A0A]/50 backdrop-blur-md sticky top-0 z-20">
-                    <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-full border border-white/5">
-                        <Search size={16} className="text-gray-500" />
-                        <input
-                            type="text"
-                            placeholder="Sistemde ara..."
-                            className="bg-transparent border-none outline-none text-xs w-64 placeholder:text-gray-600"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                        <div className="relative cursor-pointer text-gray-400 hover:text-white transition-colors">
-                            <Bell size={20} />
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#d9a066] rounded-full"></span>
-                        </div>
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#d9a066] to-yellow-200 p-[1px]">
-                            <div className="h-full w-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold">
-                                AD
-                            </div>
-                        </div>
-                    </div>
-                </header>
 
                 <div className="p-12 space-y-12">
                     {/* Sayfa İçeriği (Karşılama, İstatistikler, Hızlı Aksiyonlar) */}
+                    <br /><br />
                     <section>
                         <h1 className="text-4xl font-extralight tracking-tight mb-2">Yönetim Paneli</h1>
                         <p className="text-gray-500 text-sm italic font-serif">Hoş geldin. Bugün sistemi güncellemek için harika bir gün.</p>
@@ -76,8 +56,8 @@ export default function AdminDashboard() {
                         </div>
                     </section>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Sidebar from "../../Sidebar";
-import { Plus, Trash2, BookOpen, ExternalLink, Image as ImageIcon, FileText, CheckCircle2 } from "lucide-react";
+import { Trash2, ExternalLink, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
 
 interface KatalogItem {
     id: number;
@@ -17,237 +17,166 @@ const API_URL = "https://ekolhome.smusa9883x.workers.dev/api/catalog";
 
 export default function AdminKatalog() {
     const [kataloglar, setKataloglar] = useState<KatalogItem[]>([]);
-    const [newKatalog, setNewKatalog] = useState({ title: "", season: "", cover_image: "", pdf_url: "" });
+    const [title, setTitle] = useState("");
+    const [season, setSeason] = useState("");
     const [loading, setLoading] = useState(true);
-    const [adding, setAdding] = useState(false);
+    const [uploading, setUploading] = useState({ active: false, percent: 0 });
 
-    useEffect(() => {
-        fetch(API_URL)
-            .then(res => res.json())
-            .then((data: KatalogItem[]) => {
-                setKataloglar(data);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
-    }, []);
+    const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [pdfFile, setPdfFile] = useState<File | null>(null);
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("Bu kataloğu silmek istediğinize emin misiniz?")) return;
+    const fetchKatalogs = async () => {
+        setLoading(true);
         try {
-            const res = await fetch(`https://ekolhome.smusa9883x.workers.dev/api/catalog/delete`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id })
-            });
-
-            if (res.ok) {
-                setKataloglar(prev => prev.filter(k => k.id !== id));
-            }
-        } catch (error) {
-            alert("Bağlantı hatası.");
-        }
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            setKataloglar(data);
+        } catch (error) { console.error(error); }
+        finally { setLoading(false); }
     };
 
-    const handleAdd = async () => {
-        if (!newKatalog.title || !newKatalog.cover_image || !newKatalog.pdf_url)
-            return alert("Lütfen tüm alanları doldurun.");
+    useEffect(() => { fetchKatalogs(); }, []);
 
-        setAdding(true);
-        const formattedKatalog = {
-            ...newKatalog,
-            cover_image: newKatalog.cover_image.startsWith('http') || newKatalog.cover_image.startsWith('/')
-                ? newKatalog.cover_image
-                : `/uploads/${newKatalog.cover_image}`,
-            pdf_url: newKatalog.pdf_url.startsWith('http') || newKatalog.pdf_url.startsWith('/')
-                ? newKatalog.pdf_url
-                : `/uploads/${newKatalog.pdf_url}`
-        };
+    const uploadFile = async (file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        // Next.js API route'una istek atıyoruz
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
 
+        // Gelen yolun başında / olduğundan emin oluyoruz (örneğin: /uploads/abc.pdf)
+        return data.filePath.startsWith('/') ? data.filePath : `/${data.filePath}`;
+    };
+
+    const handleSave = async () => {
+        if (!title || !coverFile || !pdfFile) return alert("Lütfen başlık ve dosyaları seçin.");
+        setUploading({ active: true, percent: 10 });
         try {
+            setUploading({ active: true, percent: 30 });
+            const coverPath = await uploadFile(coverFile);
+            setUploading({ active: true, percent: 60 });
+            const pdfPath = await uploadFile(pdfFile);
+            setUploading({ active: true, percent: 90 });
+
             const res = await fetch(`${API_URL}/add`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formattedKatalog)
+                body: JSON.stringify({
+                    title,
+                    season: season || "2024/25",
+                    cover_image: coverPath,
+                    pdf_url: pdfPath
+                })
             });
 
             if (res.ok) {
-                window.location.reload();
+                setUploading({ active: true, percent: 100 });
+                setTimeout(() => {
+                    setUploading({ active: false, percent: 0 });
+                    setTitle(""); setSeason(""); setCoverFile(null); setPdfFile(null);
+                    fetchKatalogs();
+                }, 1000);
             }
         } catch (error) {
-            alert("Ekleme sırasında bir hata oluştu.");
-        } finally {
-            setAdding(false);
+            console.error(error);
+            alert("Dosya yükleme veya kayıt işlemi başarısız.");
+            setUploading({ active: false, percent: 0 });
         }
     };
 
+    const handleDelete = async (id: number) => {
+        if (!confirm("Silmek istediğinize emin misiniz?")) return;
+        await fetch(`${API_URL}/delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id })
+        });
+        fetchKatalogs();
+    };
+
     return (
-        <div className="min-h-screen bg-[#0F0F0F] text-white flex font-sans overflow-hidden">
+        <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col lg:flex-row font-sans">
             <Sidebar />
-            <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0A0A0A]">
-                {/* Header Bölümü */}
-                <header className="h-20 border-b border-white/5 flex items-center justify-between px-12 bg-[#0A0A0A]/80 backdrop-blur-xl z-30">
-                    <div className="flex flex-col">
-                        <h1 className="text-xs font-bold tracking-[0.4em] uppercase text-[#d9a066]">Katalog Sistemi</h1>
-                        <span className="text-[9px] text-gray-600 uppercase tracking-widest mt-1">Dijital Yayın Yönetimi</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="text-right hidden md:block">
-                            <p className="text-[10px] text-gray-400 font-medium">Toplam Yayın</p>
-                            <p className="text-xs font-bold text-[#d9a066]">{kataloglar.length} Katalog</p>
-                        </div>
-                        <div className="h-10 w-10 rounded-full bg-[#d9a066] flex items-center justify-center text-[10px] text-black font-bold ring-4 ring-[#d9a066]/10">AD</div>
-                    </div>
-                </header>
-
-                <div className="flex-1 overflow-y-auto p-12 space-y-10 custom-scrollbar">
-                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-
-                        {/* SOL TARAF: FORM VE ÖNİZLEME */}
-                        <div className="xl:col-span-5 space-y-8">
-                            <div className="bg-[#121212] rounded-[2.5rem] border border-white/5 p-8 shadow-2xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-[#d9a066]/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-
-                                <h2 className="text-[#d9a066] text-[10px] uppercase tracking-[0.3em] font-bold mb-8 flex items-center gap-3">
-                                    <div className="w-6 h-[1px] bg-[#d9a066]/30"></div>
-                                    YENİ YAYIN OLUŞTUR
-                                </h2>
-
-                                <div className="space-y-5">
-                                    <div className="group/input">
-                                        <label className="text-[9px] text-gray-500 uppercase tracking-widest ml-1 mb-2 block font-semibold">Katalog İsmi</label>
-                                        <input
-                                            placeholder="Örn: Minimalist Serisi 2026"
-                                            className="w-full bg-white/[0.02] border border-white/10 p-4 rounded-2xl outline-none focus:border-[#d9a066] focus:bg-white/[0.04] transition-all text-sm"
-                                            onChange={e => setNewKatalog({ ...newKatalog, title: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[9px] text-gray-500 uppercase tracking-widest ml-1 mb-2 block font-semibold">Sezon</label>
-                                            <input
-                                                placeholder="2025/26"
-                                                className="w-full bg-white/[0.02] border border-white/10 p-4 rounded-2xl outline-none focus:border-[#d9a066] text-sm"
-                                                onChange={e => setNewKatalog({ ...newKatalog, season: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="flex flex-col justify-end">
-                                            <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${newKatalog.pdf_url ? 'border-green-500/30 bg-green-500/5' : 'border-white/5 bg-white/[0.01]'}`}>
-                                                <FileText size={16} className={newKatalog.pdf_url ? 'text-green-500' : 'text-gray-600'} />
-                                                <input
-                                                    placeholder="PDF URL"
-                                                    className="bg-transparent border-none outline-none text-[10px] w-full"
-                                                    onChange={e => setNewKatalog({ ...newKatalog, pdf_url: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-[9px] text-gray-500 uppercase tracking-widest ml-1 mb-2 block font-semibold">Kapak Görseli (URL veya Dosya Adı)</label>
-                                        <div className="relative group/url">
-                                            <input
-                                                placeholder="gorsel.jpg"
-                                                className="w-full bg-white/[0.02] border border-white/10 p-4 pl-12 rounded-2xl outline-none focus:border-[#d9a066] text-sm font-mono"
-                                                onChange={e => setNewKatalog({ ...newKatalog, cover_image: e.target.value })}
-                                            />
-                                            <ImageIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within/url:text-[#d9a066] transition-colors" />
-                                        </div>
-                                    </div>
-
-                                    {/* Önizleme Kartı */}
-                                    <div className="mt-8 p-4 rounded-3xl bg-black/40 border border-white/5 aspect-[4/3] relative overflow-hidden group/preview">
-                                        {newKatalog.cover_image ? (
-                                            <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl">
-                                                <img
-                                                    src={newKatalog.cover_image.startsWith('http') ? newKatalog.cover_image : `/uploads/${newKatalog.cover_image}`}
-                                                    className="w-full h-full object-cover"
-                                                    alt="Preview"
-                                                    onError={(e) => (e.currentTarget.src = "https://placehold.co/400x600?text=Görsel+Bulunamadı&bg=111&fc=fff")}
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
-                                                <div className="absolute bottom-4 left-4">
-                                                    <p className="text-[10px] text-[#d9a066] font-bold uppercase tracking-widest">{newKatalog.season || "SEZON"}</p>
-                                                    <h4 className="text-sm font-bold uppercase">{newKatalog.title || "KATALOG BAŞLIĞI"}</h4>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-700 gap-3 italic">
-                                                <ImageIcon size={40} strokeWidth={1} />
-                                                <span className="text-[10px] uppercase tracking-widest font-medium text-center">Görsel adresi girildiğinde<br />önizleme burada görünecek</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <button
-                                        onClick={handleAdd}
-                                        disabled={adding}
-                                        className="w-full bg-[#d9a066] text-black font-bold py-5 rounded-2xl uppercase tracking-[0.2em] text-[11px] hover:bg-white transition-all shadow-xl shadow-[#d9a066]/10 flex items-center justify-center gap-3 active:scale-[0.98]"
-                                    >
-                                        {adding ? "YAYINLANIYOR..." : <><Plus size={16} strokeWidth={3} /> KATALOĞU SİSTEME EKLE</>}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* SAĞ TARAF: LİSTELEME */}
-                        <div className="xl:col-span-7 space-y-6 pb-20">
-                            <div className="flex items-center justify-between px-2">
-                                <h2 className="text-[10px] text-[#d9a066] uppercase tracking-[0.4em] font-bold">MEVCUT YAYINLAR</h2>
-                                <span className="text-[10px] text-gray-600 font-mono tracking-tighter">API: /v1/catalog/list</span>
-                            </div>
-
-                            {loading ? (
-                                <div className="grid grid-cols-2 gap-4">
-                                    {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-white/5 animate-pulse rounded-3xl"></div>)}
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {kataloglar.map((k) => (
-                                        <div key={k.id} className="bg-[#121212] border border-white/5 p-4 rounded-[2rem] flex items-center gap-5 hover:border-[#d9a066]/30 transition-all group/card">
-                                            <div className="w-20 h-24 bg-black rounded-2xl overflow-hidden relative shadow-lg shrink-0 border border-white/5">
-                                                {k.cover_image ? (
-                                                    <Image
-                                                        src={k.cover_image}
-                                                        alt={k.title}
-                                                        fill
-                                                        className="object-cover group-hover/card:scale-110 transition-transform duration-500"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-gray-800"><BookOpen size={24} /></div>
-                                                )}
-                                                <div className="absolute inset-0 bg-black/40 group-hover/card:bg-transparent transition-colors"></div>
-                                            </div>
-
-                                            <div className="flex-1 min-w-0 space-y-1">
-                                                <p className="text-[9px] text-[#d9a066] font-bold tracking-widest uppercase">{k.season}</p>
-                                                <h3 className="text-xs font-bold uppercase truncate pr-4">{k.title}</h3>
-                                                <div className="flex items-center gap-2 pt-2">
-                                                    <a
-                                                        href={k.pdf_url}
-                                                        target="_blank"
-                                                        className="p-2 bg-white/5 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all"
-                                                        title="PDF'i Görüntüle"
-                                                    >
-                                                        <ExternalLink size={14} />
-                                                    </a>
-                                                    <div className="w-px h-3 bg-white/10 mx-1"></div>
-                                                    <button
-                                                        onClick={() => handleDelete(k.id)}
-                                                        className="p-2 bg-white/5 rounded-lg text-gray-600 hover:text-red-500 hover:bg-red-500/10 transition-all"
-                                                        title="Kataloğu Sil"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+            <main className="flex-1 p-6 lg:p-12 overflow-y-auto">
+                <div className="flex justify-between items-center mb-10">
+                    <h1 className="text-[#d9a066] text-xs font-bold tracking-[0.4em] uppercase">KATALOG YÖNETİMİ</h1>
+                    <div className="w-10 h-10 bg-[#d9a066] rounded-full flex items-center justify-center text-black font-bold text-xs uppercase">AD</div>
                 </div>
+
+                <section className="bg-[#121212] rounded-[2rem] border border-white/5 p-8 mb-12 relative overflow-hidden">
+                    {uploading.active && (
+                        <div className="absolute top-0 left-0 h-1 bg-[#d9a066] transition-all duration-500" style={{ width: `${uploading.percent}%` }} />
+                    )}
+                    <h2 className="text-[#d9a066] text-[10px] uppercase tracking-[0.3em] font-bold mb-8">
+                        {uploading.active ? "YÜKLENİYOR..." : "YENİ YAYIN OLUŞTUR"}
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Katalog Başlığı" className="bg-white/[0.03] border border-white/10 p-4 rounded-xl outline-none text-sm text-white" />
+                        <input value={season} onChange={e => setSeason(e.target.value)} placeholder="Sezon (2025)" className="bg-white/[0.03] border border-white/10 p-4 rounded-xl outline-none text-sm text-white" />
+
+                        <label className="flex items-center gap-3 bg-white/[0.03] border border-white/10 p-4 rounded-xl cursor-pointer hover:bg-white/5 transition-colors">
+                            <ImageIcon size={18} className="text-gray-500" />
+                            <span className="text-xs text-gray-400 truncate">{coverFile ? coverFile.name : "Kapak Seç"}</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={e => setCoverFile(e.target.files?.[0] || null)} />
+                        </label>
+
+                        <label className="flex items-center gap-3 bg-white/[0.03] border border-white/10 p-4 rounded-xl cursor-pointer hover:bg-white/5 transition-colors">
+                            <FileText size={18} className="text-gray-500" />
+                            <span className="text-xs text-gray-400 truncate">{pdfFile ? pdfFile.name : "PDF Seç"}</span>
+                            <input type="file" accept=".pdf" className="hidden" onChange={e => setPdfFile(e.target.files?.[0] || null)} />
+                        </label>
+
+                        <button onClick={handleSave} disabled={uploading.active} className="md:col-span-2 xl:col-span-4 bg-[#d9a066] text-black font-bold py-4 rounded-xl text-[10px] tracking-widest hover:bg-white transition-all disabled:opacity-50">
+                            {uploading.active ? "İŞLENİYOR..." : "SİSTEME KAYDET"}
+                        </button>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 className="text-[#d9a066] text-[10px] uppercase tracking-[0.3em] font-bold mb-6 italic">KAYITLI YAYINLAR</h2>
+                    {loading ? (
+                        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#d9a066]" /></div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                            {kataloglar.map((k) => (
+                                <div key={k.id} className="bg-[#121212] border border-white/5 p-5 rounded-[1.5rem] flex items-center justify-between group">
+                                    <div className="flex items-center gap-6 overflow-hidden">
+                                        <div className="w-14 h-16 bg-black rounded-xl overflow-hidden relative shrink-0">
+                                            {/* cover_image başına / eklenerek public klasöründen okunması sağlandı */}
+                                            <Image
+                                                src={k.cover_image.startsWith('/') ? k.cover_image : `/${k.cover_image}`}
+                                                alt={k.title}
+                                                fill
+                                                className="object-cover"
+                                                unoptimized
+                                            />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-[9px] font-black text-[#d9a066] bg-[#d9a066]/10 px-1.5 py-0.5 rounded uppercase">{k.season}</span>
+                                                <h3 className="text-sm font-bold text-white/90 uppercase">{k.title}</h3>
+                                            </div>
+                                            <p className="text-[10px] text-gray-600 truncate max-w-[200px]">{k.pdf_url}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        {/* download özelliği eklendi ve yol kontrolü yapıldı */}
+                                        <a
+                                            href={k.pdf_url.startsWith('/') ? k.pdf_url : `/${k.pdf_url}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-[#d9a066]"
+                                        >
+                                            <ExternalLink size={16} />
+                                        </a>
+                                        <button onClick={() => handleDelete(k.id)} className="p-3 bg-white/5 rounded-xl text-gray-500 hover:text-red-500"><Trash2 size={16} /></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
             </main>
         </div>
     );

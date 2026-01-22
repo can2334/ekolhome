@@ -33,8 +33,8 @@ export default function AdminLoginPage() {
             {/* Arka Plan Dekoratif Elementler */}
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#d9a066]/10 rounded-full blur-[120px]" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/5 rounded-full blur-[120px]" />
-            
-            <motion.div 
+
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="w-full max-w-[440px] z-10"
@@ -58,10 +58,10 @@ export default function AdminLoginPage() {
                 {/* Ana Kart - Glassmorphism */}
                 <div className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-[#d9a066] to-[#555] rounded-2xl opacity-20 group-hover:opacity-30 transition duration-1000"></div>
-                    
+
                     <div className="relative bg-[#121212]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-12 shadow-2xl">
                         <form onSubmit={handleLogin} className="space-y-8">
-                            
+
                             {/* Input Grupları */}
                             <div className="space-y-6">
                                 <div className="group/input">
@@ -98,7 +98,7 @@ export default function AdminLoginPage() {
                             {/* Hata Mesajı */}
                             <AnimatePresence>
                                 {error && (
-                                    <motion.div 
+                                    <motion.div
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: 'auto' }}
                                         exit={{ opacity: 0, height: 0 }}
@@ -134,7 +134,7 @@ export default function AdminLoginPage() {
                 </div>
 
                 {/* Güvenlik Notu */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
@@ -146,7 +146,7 @@ export default function AdminLoginPage() {
                         <div className="h-[1px] w-12 bg-white"></div>
                     </div>
                     <p className="text-[9px] text-gray-600 tracking-[0.2em] text-center leading-relaxed">
-                        BU ALAN SADECE YETKİLİ PERSONEL İÇİNDİR.<br/>
+                        BU ALAN SADECE YETKİLİ PERSONEL İÇİNDİR.<br />
                         TÜM ERİŞİM KAYITLARI LOGLANMAKTADIR.
                     </p>
                 </motion.div>
