@@ -8,7 +8,7 @@ Bu proje, modern web teknolojileri ve sürdürülebilir mimari prensipleri ile g
 
 > **ÖNEMLİ:** Bu proje özel bir mülkiyettir ve tüm hakları saklıdır.
 > 
-> **Yetkili Kullanım:** Bu yazılımın kullanım, yayına alma ve yönetim yetkisi münhasıran **[BURAYA FİRMA ADINI YAZ]** şirketine aittir.
+> **Yetkili Kullanım:** Bu yazılımın kullanım, yayına alma ve yönetim yetkisi münhasıran **Ekol Home Mobilya Tekstil Tur. Tic. Ltd. Şti.** şirketine aittir.
 > 
 > * Bu projenin kaynak kodları, tasarım ögeleri ve veritabanı yapısı izin alınmadan kopyalanamaz.
 > * Yetkili firma dışında üçüncü şahıslar tarafından ticari amaçla kullanılması veya dağıtılması yasaktır.

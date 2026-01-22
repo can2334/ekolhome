@@ -63,24 +63,19 @@ export default function Contact() {
     return (
         <main className="bg-white text-black min-h-screen font-light selection:bg-[#d9a066] selection:text-white">
 
-            {/* Üst Başlık: Boşluklar (pt-48'den pt-24'e) ciddi oranda azaltıldı */}
-            <div className="pt-24 pb-12 max-w-[1400px] mx-auto px-6 lg:px-12">
+            {/* Üst Başlık Bölümü */}
+            <div className="pt-24 pb-8 max-w-[1400px] mx-auto px-6 lg:px-12">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                     className="max-w-3xl"
                 >
-                    <h1 className="text-5xl md:text-7xl font-extralight tracking-tighter leading-tight mb-4 text-[#1a1a1a]">
-                        BİZİMLE <br /> <span className="text-[#d9a066]">TANIŞIN.</span>
-                    </h1>
-                    <p className="text-gray-400 uppercase tracking-widest text-[10px]">
-                        Ekolhome Mimarlık & Mobilya İletişim Hattı
-                    </p>
+
                 </motion.div>
             </div>
 
-            {/* Bilgi ve Form Alanı: grid-cols-2 ve items-start ile form yukarı kilitlendi */}
+            {/* Bilgi ve Form Alanı */}
             <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-10 items-start pb-16">
 
                 {/* Sol: İletişim Detayları */}
@@ -117,12 +112,12 @@ export default function Contact() {
                     </div>
                 </motion.div>
 
-                {/* Sağ: Form - Padding ve Margin değerleri daraltıldı */}
+                {/* Sağ: Form - Hizalamayı sağlayan lg:mt-2 eklendi */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    className="bg-[#fcfcfc] p-8 md:p-10 rounded-[30px] border border-gray-100 shadow-sm"
+                    className="bg-[#fcfcfc] p-8 md:p-10 rounded-[30px] border border-gray-100 shadow-sm lg:mt-2"
                 >
                     <form onSubmit={handleSubmit} className="space-y-8">
                         <div className="relative group">
