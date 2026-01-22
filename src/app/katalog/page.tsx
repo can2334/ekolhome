@@ -1,18 +1,25 @@
-import { client } from '@/sanity/lib/client';
-import { urlFor } from '@/sanity/lib/image';
 import Image from 'next/image';
-import { Download, Eye, ArrowRight } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';
 
-export default async function KatalogPage() {
-    // Sanity'den verileri çekiyoruz
-    const query = `*[_type == "katalog"] | order(_createdAt desc){
-        title,
-        "slug": slug.current,
-        coverImage,
-        "pdfUrl": pdfFile.asset->url
-    }`;
-    const kataloglar = await client.fetch(query);
+// MANUEL VERİ YAPISI (Sanity yerine)
+const KATALOGLAR = [
+    {
+        title: "2024 Özel Koleksiyon",
+        slug: "2024-ozel-koleksiyon",
+        // Görselleri public/images/katalog/ içine koyabilirsin
+        coverImage: "/images/katalog/kapak-1.jpg", 
+        // PDF'leri public/pdf/ içine koyabilirsin
+        pdfUrl: "/pdf/ekolhome-2024-koleksiyon.pdf"
+    },
+    {
+        title: "Modern Yaşam Serisi",
+        slug: "modern-yasam-serisi",
+        coverImage: "/images/katalog/kapak-2.jpg",
+        pdfUrl: "/pdf/ekolhome-modern-yasam.pdf"
+    }
+];
 
+export default function KatalogPage() {
     return (
         <main className="min-h-screen bg-[#F9F9F9] pt-40 pb-20 px-6">
             <div className="max-w-6xl mx-auto">
@@ -27,14 +34,16 @@ export default async function KatalogPage() {
 
                 {/* Katalog Listesi */}
                 <div className="space-y-32">
-                    {kataloglar.map((item: any, index: number) => (
-                        <section key={item.slug} className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-12 items-center`}>
-
-                            {/* Katalog Kapağı (Görsel Alanı) */}
+                    {KATALOGLAR.map((item, index) => (
+                        <section 
+                            key={item.slug} 
+                            className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-12 items-center`}
+                        >
+                            {/* Katalog Kapağı */}
                             <div className="w-full md:w-1/2 relative group">
                                 <div className="relative aspect-[3/4] overflow-hidden shadow-[30px_30px_60px_-15px_rgba(0,0,0,0.3)] bg-white">
                                     <Image
-                                        src={urlFor(item.coverImage).url()}
+                                        src={item.coverImage}
                                         alt={item.title}
                                         fill
                                         className="object-cover transition-transform duration-1000 group-hover:scale-105"
@@ -44,17 +53,17 @@ export default async function KatalogPage() {
                                         <a
                                             href={`${item.pdfUrl}#toolbar=0`}
                                             target="_blank"
+                                            rel="noopener noreferrer"
                                             className="bg-white text-black px-8 py-4 text-xs uppercase tracking-widest flex items-center gap-3 hover:bg-gray-200 transition-all"
                                         >
                                             <Eye size={16} /> Hemen İncele
                                         </a>
                                     </div>
                                 </div>
-                                {/* Dekoratif Gölge/Sayfa Kenarı Efekti */}
                                 <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-black/10 z-10"></div>
                             </div>
 
-                            {/* Katalog Bilgisi (Yazı Alanı) */}
+                            {/* Katalog Bilgisi */}
                             <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sezon 2024/25</span>
                                 <h3 className="text-4xl font-light text-black tracking-tight leading-tight">

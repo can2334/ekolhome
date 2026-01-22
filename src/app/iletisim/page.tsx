@@ -1,34 +1,31 @@
 "use client";
-import { useState, useEffect } from "react"; // Veri çekmek için useEffect ekledik
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { client } from "@/sanity/lib/client"; // Sanity client yolunu kontrol et
 
-// Senin Formspree linkin
-const FORM_ENDPOINT = "https://formspree.io/f/mreezzkz";
+// API ve Form Linkleri
+const API_ENDPOINT = "https://ekolhome.smusa9883x.workers.dev/api/contact";
+const FORM_ENDPOINT = "https://formspree.io/f/mdaeoaza";
 
-// Sanity'den gelecek verinin tipi
 interface ContactData {
-    phones: string[];
-    email: string;
     address: string;
-    mapUrl: string;
+    phone: string;
+    email: string;
+    map_url: string;
 }
 
 export default function Contact() {
     const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
     const [contact, setContact] = useState<ContactData | null>(null);
 
-    // Sanity'den verileri çekiyoruz
     useEffect(() => {
         const fetchContact = async () => {
-            const query = `*[_type == "contact"][0]{
-    phones, // phone yerine phones
-    email,
-    address,
-    mapUrl 
-}`;
-            const data = await client.fetch(query);
-            setContact(data);
+            try {
+                const res = await fetch(API_ENDPOINT);
+                const data = await res.json();
+                setContact(data[0]);
+            } catch (err) {
+                console.error("Veri çekme hatası:", err);
+            }
         };
         fetchContact();
     }, []);
@@ -53,88 +50,168 @@ export default function Contact() {
                 setStatus("error");
             }
         } catch (err) {
-            console.error("Formspree Hatası:", err);
             setStatus("error");
         }
     };
 
-    // Veri yüklenene kadar boş dönmesin diye ufak bir kontrol
-    if (!contact) return <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center">Yükleniyor...</div>;
+    if (!contact) return (
+        <div className="min-h-screen bg-white flex items-center justify-center text-[10px] tracking-[0.3em] uppercase opacity-50">
+            Yükleniyor...
+        </div>
+    );
 
     return (
-        <main className="bg-[#FAF9F6] text-[#1a1a1a] min-h-screen">
-            <div className="pt-32 pb-20 max-w-7xl mx-auto px-6 md:px-12">
-                <div className="grid md:grid-cols-2 gap-16 items-start">
+        <main className="bg-white text-black min-h-screen font-light selection:bg-[#d9a066] selection:text-white">
 
-                    {/* Sol: İletişim Detayları (SANITY'DEN GELENLER) */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="space-y-10"
-                    >
-                        <div>
-                            <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-4 border-b border-black/10 pb-2 inline-block">Adres</h3>
-                            <p className="text-lg font-light leading-relaxed max-w-sm">{contact.address}</p>
-                        </div>
-                        <div>
-                            <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-4 border-b border-black/10 pb-2 inline-block">Telefon</h3>
-                            {contact.phones?.map((p, i) => (
-                                <p key={i} className="text-lg font-light">{p}</p>
-                            ))}
-                        </div>
-                        <div>
-                            <h3 className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-4 border-b border-black/10 pb-2 inline-block">E-Mail</h3>
-                            <p className="text-lg font-light text-gray-600">{contact.email}</p>
-                        </div>
-                    </motion.div>
+            {/* Üst Başlık: Boşluklar (pt-48'den pt-24'e) ciddi oranda azaltıldı */}
+            <div className="pt-24 pb-12 max-w-[1400px] mx-auto px-6 lg:px-12">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="max-w-3xl"
+                >
+                    <h1 className="text-5xl md:text-7xl font-extralight tracking-tighter leading-tight mb-4 text-[#1a1a1a]">
+                        BİZİMLE <br /> <span className="text-[#d9a066]">TANIŞIN.</span>
+                    </h1>
+                    <p className="text-gray-400 uppercase tracking-widest text-[10px]">
+                        Ekolhome Mimarlık & Mobilya İletişim Hattı
+                    </p>
+                </motion.div>
+            </div>
 
-                    {/* Sağ: Form (Değişmedi) */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="bg-white p-8 border border-black/5 shadow-sm"
-                    >
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="space-y-4">
-                                <input name="name" required placeholder="Adınız" className="w-full bg-[#f7f7f7] border-none px-4 py-4 text-xs outline-none focus:ring-1 focus:ring-black transition-all" />
-                                <input name="email" type="email" required placeholder="E-Mail" className="w-full bg-[#f7f7f7] border-none px-4 py-4 text-xs outline-none focus:ring-1 focus:ring-black transition-all" />
-                                <textarea name="message" rows={4} required placeholder="Mesajınız" className="w-full bg-[#f7f7f7] border-none px-4 py-4 text-xs outline-none focus:ring-1 focus:ring-black transition-all resize-none" />
+            {/* Bilgi ve Form Alanı: grid-cols-2 ve items-start ile form yukarı kilitlendi */}
+            <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-10 items-start pb-16">
+
+                {/* Sol: İletişim Detayları */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    className="space-y-10 py-2"
+                >
+                    <div className="group">
+                        <span className="text-[10px] tracking-[0.5em] text-[#d9a066] uppercase font-bold block mb-3">Lokasyon</span>
+                        <p className="text-xl md:text-2xl tracking-tight leading-snug font-extralight max-w-sm">
+                            {contact.address}
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="group">
+                            <span className="text-[10px] tracking-[0.5em] text-[#d9a066] uppercase font-bold block mb-3">Telefon</span>
+                            <div className="space-y-1">
+                                {contact.phone?.split(",").map((p, i) => (
+                                    <a key={i} href={`tel:${p}`} className="block text-lg hover:text-[#d9a066] transition-colors font-extralight">
+                                        {p.trim()}
+                                    </a>
+                                ))}
                             </div>
+                        </div>
+                        <div className="group">
+                            <span className="text-[10px] tracking-[0.5em] text-[#d9a066] uppercase font-bold block mb-3">E-Posta</span>
+                            <a href={`mailto:${contact.email}`} className="text-lg hover:text-[#d9a066] transition-colors font-extralight block">
+                                {contact.email}
+                            </a>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Sağ: Form - Padding ve Margin değerleri daraltıldı */}
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    className="bg-[#fcfcfc] p-8 md:p-10 rounded-[30px] border border-gray-100 shadow-sm"
+                >
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        <div className="relative group">
+                            <label className="text-[10px] uppercase tracking-[0.2em] text-black font-semibold block mb-1">
+                                İsim Soyisim
+                            </label>
+                            <input
+                                name="name"
+                                required
+                                className="w-full bg-transparent border-b border-gray-200 py-2 outline-none focus:border-black transition-all text-base"
+                            />
+                        </div>
+
+                        <div className="relative group">
+                            <label className="text-[10px] uppercase tracking-[0.2em] text-black font-semibold block mb-1">
+                                E-Posta Adresi
+                            </label>
+                            <input
+                                name="email"
+                                type="email"
+                                required
+                                className="w-full bg-transparent border-b border-gray-200 py-2 outline-none focus:border-black transition-all text-base"
+                            />
+                        </div>
+
+                        <div className="relative group">
+                            <label className="text-[10px] uppercase tracking-[0.2em] text-black font-semibold block mb-1">
+                                Mesajınız
+                            </label>
+                            <textarea
+                                name="message"
+                                rows={2}
+                                required
+                                className="w-full bg-transparent border-b border-gray-200 py-2 outline-none focus:border-black transition-all text-base resize-none"
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-4">
                             <button
                                 type="submit"
                                 disabled={status === "sending"}
-                                className="w-full bg-[#d9a066] hover:bg-black text-white py-4 text-[10px] uppercase tracking-[0.4em] font-medium transition-all duration-500 disabled:bg-gray-400"
+                                className="group flex items-center gap-4 outline-none"
                             >
-                                {status === "sending" ? "GÖNDERİLİYOR..." : "GÖNDER"}
+                                <div className="w-12 h-12 rounded-full border border-black group-hover:bg-black transition-all duration-500 flex items-center justify-center">
+                                    <motion.svg
+                                        width="16" height="16" viewBox="0 0 20 20" fill="none"
+                                        className="group-hover:invert transition-all"
+                                        whileHover={{ x: 3 }}
+                                    >
+                                        <path d="M5 10H15M15 10L10 5M15 10L10 15" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </motion.svg>
+                                </div>
+                                <span className="text-[10px] uppercase tracking-[0.3em] font-black group-hover:text-[#d9a066] transition-colors">
+                                    {status === "sending" ? "GÖNDERİLİYOR" : "MESAJI GÖNDER"}
+                                </span>
                             </button>
+                            {status === "success" && (
+                                <p className="text-[9px] text-green-600 font-bold uppercase tracking-widest animate-pulse">
+                                    ✓ Başarıyla iletildi.
+                                </p>
+                            )}
+                        </div>
+                    </form>
+                </motion.div>
+            </div>
 
-                            {status === "success" && <p className="text-[10px] text-green-600 text-center uppercase tracking-widest mt-4">Mesajınız başarıyla gönderildi!</p>}
-                            {status === "error" && <p className="text-[10px] text-red-600 text-center uppercase tracking-widest mt-4">Bir sorun oluştu, lütfen tekrar deneyin.</p>}
-                        </form>
-                    </motion.div>
-                </div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="mt-20 w-full h-[450px] border border-black/5 overflow-hidden shadow-sm"
-                >
-                    {contact.mapUrl ? (
+            {/* Harita */}
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="max-w-[1400px] mx-auto px-6 lg:px-12 pb-20"
+            >
+                <div className="relative w-full h-[400px] md:h-[450px] rounded-[30px] border-[6px] border-white shadow-xl overflow-hidden">
+                    {contact.map_url ? (
                         <iframe
-                            src={contact.mapUrl}
-                            className="w-full h-full"
-                            style={{ border: 0 }}
+                            src={contact.map_url}
+                            className="w-full h-full border-none"
+                            style={{ filter: "grayscale(0.1)" }}
                             allowFullScreen
                             loading="lazy"
                         />
                     ) : (
-                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                            Harita linki henüz eklenmedi.
+                        <div className="w-full h-full bg-[#f8f8f8] flex items-center justify-center animate-pulse text-[10px] tracking-widest">
+                            HARİTA YÜKLENİYOR...
                         </div>
                     )}
-                </motion.div>
-            </div>
+                </div>
+            </motion.div>
         </main>
     );
 }

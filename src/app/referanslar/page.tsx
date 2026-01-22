@@ -1,16 +1,24 @@
 "use client";
 
-import { client } from '@/sanity/lib/client'
 import Image from 'next/image'
-import { urlFor } from '@/sanity/lib/image'
 import { useEffect, useState, useRef } from 'react'
 import { ChevronLeft, ChevronRight, Sparkles, Award, Users, Clock } from 'lucide-react'
 import { motion, useMotionValue, useSpring, animate } from 'framer-motion'
 
+// MANUEL REFERANS VERİLERİ (Sanity yerine)
+const REFERENCES_DATA = [
+    { _id: '1', name: 'Zorlu Center', logo: '/images/references/zorlu.png' },
+    { _id: '2', name: 'Hilton Hotels', logo: '/images/references/hilton.png' },
+    { _id: '3', name: 'Rixos Premium', logo: '/images/references/rixos.png' },
+    { _id: '4', name: 'Arkas Holding', logo: '/images/references/arkas.png' },
+    { _id: '5', name: 'Folkart Towers', logo: '/images/references/folkart.png' },
+    // Buraya dilediğin kadar ekleyebilirsin
+];
+
 export default function ReferanslarPage() {
-    const [references, setReferences] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+    // Slider döngüsü için veriyi çoğaltıyoruz (eski mantıkla aynı)
+    const [references] = useState<any[]>(Array(5).fill(REFERENCES_DATA).flat())
+    const [loading, setLoading] = useState(false) // Manuel veri olduğu için loading kapalı
     const containerRef = useRef<HTMLDivElement>(null)
     const [constraints, setConstraints] = useState({ left: 0, right: 0 })
 
@@ -18,20 +26,12 @@ export default function ReferanslarPage() {
     const springX = useSpring(x, { stiffness: 200, damping: 25 })
 
     useEffect(() => {
-        const query = `*[_type == "clientReference"] | order(_createdAt desc)`
-        client.fetch(query).then(data => {
-            setReferences(Array(10).fill(data).flat())
-            setLoading(false)
-        })
-    }, [])
-
-    useEffect(() => {
         if (containerRef.current) {
             const scrollWidth = containerRef.current.scrollWidth
             const offsetWidth = containerRef.current.offsetWidth
             setConstraints({ left: -(scrollWidth - offsetWidth), right: 0 })
         }
-    }, [references, loading])
+    }, [references])
 
     const handleScroll = (direction: 'left' | 'right') => {
         const moveAmount = window.innerWidth < 768 ? 300 : 450
@@ -47,24 +47,8 @@ export default function ReferanslarPage() {
         })
     }
 
-    if (loading) {
-        return (
-            <main className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-neutral-50 flex items-center justify-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-center"
-                >
-                    <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        className="w-16 h-16 border-2 border-neutral-200 border-t-black rounded-full mx-auto mb-4"
-                    />
-                    <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">EkolHome</p>
-                </motion.div>
-            </main>
-        )
-    }
+    // Sanity'den veri gelmediği sürece loading ekranına gerek yok ama tasarımı korumak istersen durabilir.
+    if (loading) return null;
 
     return (
         <main className="min-h-screen bg-white text-neutral-900 overflow-x-hidden">
@@ -132,22 +116,18 @@ export default function ReferanslarPage() {
                             <p className="text-2xl md:text-4xl font-light tracking-tight">Referans Projelerimiz</p>
                         </div>
                         <div className="hidden md:flex gap-3">
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                            <button
                                 onClick={() => handleScroll('left')}
                                 className="p-4 bg-white border border-neutral-200 rounded-full hover:bg-neutral-900 hover:text-white transition-all shadow-sm"
                             >
                                 <ChevronLeft size={20} strokeWidth={1.5} />
-                            </motion.button>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                            </button>
+                            <button
                                 onClick={() => handleScroll('right')}
                                 className="p-4 bg-white border border-neutral-200 rounded-full hover:bg-neutral-900 hover:text-white transition-all shadow-sm"
                             >
                                 <ChevronRight size={20} strokeWidth={1.5} />
-                            </motion.button>
+                            </button>
                         </div>
                     </div>
 
@@ -158,7 +138,6 @@ export default function ReferanslarPage() {
                             drag="x"
                             dragConstraints={constraints}
                             dragElastic={0.1}
-                            // Sürükleme başlarken tarayıcının varsayılan görsel sürükleme özelliğini durdurur
                             onDragStart={(e) => e.preventDefault()}
                             className="flex gap-4 md:gap-8 py-8"
                         >
@@ -166,7 +145,6 @@ export default function ReferanslarPage() {
                                 <motion.div
                                     key={`${item._id}-${idx}`}
                                     whileHover={{ y: -10 }}
-                                    // Bu kısım görselin mavi renkle seçilmesini ve sürüklenmesini engeller
                                     className="flex-shrink-0 w-64 h-44 md:w-96 md:h-64 bg-white border border-neutral-100 shadow-xl rounded-[2.5rem] flex items-center justify-center p-6 md:p-10 relative overflow-hidden group select-none"
                                 >
                                     <div className="absolute inset-0 bg-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0" />
@@ -174,11 +152,10 @@ export default function ReferanslarPage() {
                                     {item.logo ? (
                                         <div className="relative w-full h-full transform group-hover:scale-105 transition-transform duration-500 z-10 pointer-events-none">
                                             <Image
-                                                src={urlFor(item.logo).url()}
-                                                alt={item.name || "Referans"}
+                                                src={item.logo}
+                                                alt={item.name}
                                                 fill
-                                                className="object-contain pointer-events-none"
-                                                // draggable={false} tarayıcının resmi tutup çekmesini engeller
+                                                className="object-contain"
                                                 draggable={false}
                                                 sizes="(max-width: 768px) 256px, 384px"
                                             />
@@ -190,7 +167,6 @@ export default function ReferanslarPage() {
                                             </span>
                                         </div>
                                     )}
-
                                     <div className="absolute top-6 right-6 w-2 h-2 rounded-full bg-neutral-900 group-hover:bg-white transition-colors duration-500 z-20" />
                                 </motion.div>
                             ))}
@@ -198,71 +174,9 @@ export default function ReferanslarPage() {
                     </div>
                 </div>
             </section>
-
-            {/* SÜREÇ BÖLÜMÜ */}
-            <section className="py-24 md:py-40 px-6 bg-white relative">
-                <div className="absolute inset-0 opacity-[0.02]">
-                    <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-                </div>
-                <div className="max-w-7xl mx-auto relative">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 md:gap-24 items-start">
-                        <motion.div
-                            initial={{ opacity: 0, x: -30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="lg:col-span-5 lg:sticky lg:top-32"
-                        >
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-600 text-[10px] uppercase tracking-[0.3em] mb-6">
-                                <div className="w-1.5 h-1.5 rounded-full bg-neutral-900 animate-pulse" />
-                                <span>Süreç</span>
-                            </div>
-                            <h2 className="text-4xl md:text-6xl font-light tracking-[-0.01em] mb-6 leading-tight">
-                                Fikir Nasıl <br />
-                                <span className="font-serif italic text-neutral-400">Form Bulur</span>?
-                            </h2>
-                            <div className="w-16 h-[1px] bg-neutral-900 mb-8" />
-                            <p className="text-neutral-500 leading-relaxed text-sm md:text-base mb-8">
-                                EkolHome'da her süreç, bir hammaddenin ötesine geçerek yaşam alanınıza değer katan bir sanat eserine dönüşme hikayesidir.
-                            </p>
-                            <motion.div whileHover={{ x: 5 }} className="inline-flex items-center gap-2 text-sm font-medium text-neutral-900 cursor-pointer">
-                                <span>Tüm Süreci Keşfet</span>
-                                <ChevronRight size={16} />
-                            </motion.div>
-                        </motion.div>
-
-                        <div className="lg:col-span-7 grid grid-cols-1 gap-8">
-                            <ProcessStep num="01" title="Kürasyon & Analiz" desc="Mekanınızın ihtiyaçlarını sadece ölçülerle değil, ruhuyla analiz ediyoruz." delay={0.1} />
-                            <ProcessStep num="02" title="Materyal Seçkisi" desc="Dokusuyla hikaye anlatan kumaşları ve en dayanıklı iskelet yapılarını özenle seçiyoruz." delay={0.2} />
-                            <ProcessStep num="03" title="Hassas İşçilik" desc="Usta ellerin dokunuşunu modern teknolojiyle harmanlayarak kusursuzlaştırıyoruz." delay={0.3} />
-                            <ProcessStep num="04" title="Final & Teslimat" desc="Süreci sadece ürün teslimiyle değil, mükemmel memnuniyetle noktalıyoruz." delay={0.4} />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA SECTION */}
-            <section className="py-24 md:py-32 px-6 bg-neutral-900 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-neutral-900" />
-                <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-                        <h2 className="text-3xl md:text-5xl font-light tracking-tight mb-6">
-                            Projeniz için <span className="font-serif italic">mükemmel</span> çözümler
-                        </h2>
-                        <p className="text-neutral-400 text-sm md:text-base mb-10">EkolHome ile hayalinizdeki mekanı yaratın</p>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-8 py-4 bg-white text-neutral-900 rounded-full font-medium text-sm hover:shadow-2xl transition-all"
-                        >
-                            İletişime Geçin
-                        </motion.button>
-                    </motion.div>
-                </div>
-            </section>
         </main>
     )
 }
-
 function StatItem({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) {
     return (
         <div className="text-center md:text-left">

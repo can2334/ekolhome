@@ -5,8 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
-import { client } from '@/sanity/lib/client'; // Sanity client'ını import et
-import { urlFor } from '@/sanity/lib/image';  // Image helper'ını import et
 
 // Interface tanımı (TypeScript kullanıyorsan)
 interface Service {
@@ -20,22 +18,6 @@ export default function HizmetlerimizPage() {
     const [services, setServices] = useState<Service[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Sanity'den veriyi çeken sorgu
-        const fetchServices = async () => {
-            const query = `*[_type == "service"] | order(order asc) {
-                title,
-                slug,
-                image,
-                desc
-            }`;
-            const data = await client.fetch(query);
-            setServices(data);
-            setLoading(false);
-        };
-
-        fetchServices();
-    }, []);
 
     if (loading) return <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>;
 
@@ -76,7 +58,7 @@ export default function HizmetlerimizPage() {
                                 <div className="relative aspect-[4/5] overflow-hidden bg-gray-50 mb-6">
                                     <Image
                                         // Sanity Image Helper kullanımı
-                                        src={urlFor(service.image).url()}
+                                        src={(service.image).url()}
                                         alt={service.title}
                                         fill
                                         priority={index < 3}

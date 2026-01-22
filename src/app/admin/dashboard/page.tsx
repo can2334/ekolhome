@@ -1,0 +1,170 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { 
+    LayoutDashboard, 
+    Image as ImageIcon, 
+    FileText, 
+    Settings, 
+    LogOut, 
+    Bell, 
+    Search,
+    Plus,
+    ArrowUpRight,
+    Users
+} from "lucide-react";
+import { motion } from "framer-motion";
+
+export default function AdminDashboard() {
+    const router = useRouter();
+    const [activeTab, setActiveTab] = useState("Genel Bakış");
+
+    // Basit Güvenlik Kontrolü
+    useEffect(() => {
+        const token = localStorage.getItem("admin_token");
+        if (!token) {
+            router.push("/admin");
+        }
+    }, [router]);
+
+    const handleLogout = () => {
+        localStorage.removeItem("admin_token");
+        router.push("/");
+    };
+
+    const sidebarItems = [
+        { name: "Genel Bakış", icon: <LayoutDashboard size={18} /> },
+        { name: "Kataloglar", icon: <FileText size={18} /> },
+        { name: "Referanslar", icon: <ImageIcon size={18} /> },
+        { name: "Ayarlar", icon: <Settings size={18} /> },
+    ];
+
+    return (
+        <div className="min-h-screen bg-[#0F0F0F] text-white flex font-sans">
+            
+            {/* --- SIDEBAR --- */}
+            <aside className="w-72 border-r border-white/5 bg-[#0A0A0A] flex flex-col p-8 sticky top-0 h-screen">
+                <div className="mb-12">
+                    <h2 className="text-2xl font-extralight tracking-[0.3em] uppercase">
+                        Ekol<span className="font-serif italic text-[#d9a066]">H</span>
+                    </h2>
+                </div>
+
+                <nav className="flex-1 space-y-2">
+                    {sidebarItems.map((item) => (
+                        <button
+                            key={item.name}
+                            onClick={() => setActiveTab(item.name)}
+                            className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[11px] uppercase tracking-[0.2em] transition-all duration-300 ${
+                                activeTab === item.name 
+                                ? "bg-[#d9a066] text-black font-bold shadow-[0_0_20px_rgba(217,160,102,0.3)]" 
+                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                            }`}
+                        >
+                            {item.icon}
+                            {item.name}
+                        </button>
+                    ))}
+                </nav>
+
+                <button 
+                    onClick={handleLogout}
+                    className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:text-red-400 transition-colors text-[11px] uppercase tracking-[0.2em]"
+                >
+                    <LogOut size={18} /> Çıkış Yap
+                </button>
+            </aside>
+
+            {/* --- ANA İÇERİK --- */}
+            <main className="flex-1 flex flex-col">
+                
+                {/* Header */}
+                <header className="h-24 border-b border-white/5 flex items-center justify-between px-12 bg-[#0A0A0A]/50 backdrop-blur-md sticky top-0 z-20">
+                    <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-full border border-white/5">
+                        <Search size={16} className="text-gray-500" />
+                        <input 
+                            type="text" 
+                            placeholder="Sistemde ara..." 
+                            className="bg-transparent border-none outline-none text-xs w-64 placeholder:text-gray-600"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <div className="relative cursor-pointer text-gray-400 hover:text-white transition-colors">
+                            <Bell size={20} />
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#d9a066] rounded-full"></span>
+                        </div>
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#d9a066] to-yellow-200 p-[1px]">
+                            <div className="h-full w-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold">
+                                AD
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="p-12 space-y-12">
+                    
+                    {/* Karşılama */}
+                    <section>
+                        <h1 className="text-4xl font-extralight tracking-tight mb-2">Yönetim Paneli</h1>
+                        <p className="text-gray-500 text-sm italic font-serif">Hoş geldin. Bugün sistemi güncellemek için harika bir gün.</p>
+                    </section>
+
+                    {/* İstatistikler */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <StatCard title="Aktif Kataloglar" value="14" trend="+2 bu ay" icon={<FileText size={24} />} />
+                        <StatCard title="Toplam Referans" value="128" trend="+12 bu ay" icon={<ImageIcon size={24} />} />
+                        <StatCard title="Sistem Sağlığı" value="%99.9" trend="Optimal" icon={<Users size={24} />} />
+                    </div>
+
+                    {/* Hızlı Aksiyonlar */}
+                    <section className="space-y-6">
+                        <div className="flex justify-between items-end">
+                            <h3 className="text-[10px] uppercase tracking-[0.4em] text-[#d9a066] font-semibold">Hızlı İşlemler</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <ActionButton title="Yeni Katalog Ekle" desc="PDF veya Görsel yükle" />
+                            <ActionButton title="Referans Güncelle" desc="Logo ve isim düzenle" />
+                            <ActionButton title="SEO Ayarları" desc="Google görünürlüğü" />
+                            <ActionButton title="Medya Kütüphanesi" desc="Tüm dosyaları gör" />
+                        </div>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    );
+}
+
+// Yardımcı Bileşenler
+function StatCard({ title, value, trend, icon }: any) {
+    return (
+        <motion.div 
+            whileHover={{ y: -5 }}
+            className="bg-[#121212] border border-white/5 p-8 rounded-2xl relative overflow-hidden group"
+        >
+            <div className="absolute top-0 right-0 p-6 text-white/5 group-hover:text-[#d9a066]/10 transition-colors">
+                {icon}
+            </div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-4">{title}</p>
+            <h3 className="text-4xl font-light mb-2">{value}</h3>
+            <p className="text-[10px] text-[#d9a066] flex items-center gap-2 tracking-widest">
+                <ArrowUpRight size={12} /> {trend}
+            </p>
+        </motion.div>
+    );
+}
+
+function ActionButton({ title, desc }: any) {
+    return (
+        <button className="bg-white/5 border border-white/5 p-6 rounded-2xl text-left hover:bg-white/10 transition-all group relative overflow-hidden">
+            <div className="absolute top-4 right-4 text-gray-600 group-hover:text-white transition-colors">
+                <Plus size={18} />
+            </div>
+            <h4 className="text-sm font-medium mb-1 tracking-tight">{title}</h4>
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest leading-relaxed">{desc}</p>
+        </button>
+    );
+}

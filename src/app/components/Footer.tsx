@@ -1,7 +1,7 @@
 import React from 'react';
 import { Instagram, Mail, Phone, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import Script from "next/script"; // Next.js Script bileşenini ekledik
+import Script from "next/script";
 
 const Footer = () => {
     return (
@@ -28,59 +28,59 @@ const Footer = () => {
                     </Link>
 
                     <div className="space-y-3 text-sm font-light text-gray-600">
-                        <a
-                            href="mailto:info@ekolhometekstil.com"
-                            className="flex items-center gap-3 hover:text-black hover:italic transition-all"
-                        >
+                        <a href="mailto:info@ekolhometekstil.com" className="flex items-center gap-3 hover:text-black transition-all">
                             <Mail size={14} className="text-gray-400" />
                             <span>info@ekolhometekstil.com</span>
                         </a>
-
-                        <a
-                            href="tel:+905343214765"
-                            className="flex items-center gap-3 hover:text-black hover:italic transition-all"
-                        >
+                        <a href="tel:+905343214765" className="flex items-center gap-3 hover:text-black transition-all">
                             <Phone size={14} className="text-gray-400" />
                             <span>+90 534 321 47 65</span>
                         </a>
                     </div>
                 </div>
 
-                {/* Sosyal Medya */}
+                {/* Sosyal Medya - BAYRAK VE SLOGAN BURADA */}
                 <div className="space-y-4">
                     <div className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Takip Edin</div>
-                    <div className="flex gap-6 items-center">
-                        <a
-                            href="https://www.instagram.com/ekolhome"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group flex items-center gap-2 text-sm font-light hover:text-black transition-all"
-                        >
-                            <Instagram size={18} className="text-gray-400 group-hover:text-black transition-colors" />
-                            <span className="group-hover:italic">Instagram</span>
-                        </a>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                            <a
+                                href="https://www.instagram.com/ekolhome"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group flex items-center gap-2 text-sm font-light hover:text-black transition-all"
+                            >
+                                <Instagram size={18} className="text-gray-400 group-hover:text-black transition-colors" />
+                                <span className="group-hover:italic">Instagram</span>
+                            </a>
+                            
+                           
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <p className="text-[12px] font-black text-red-600 tracking-tighter uppercase">
+                            MERMİDEN HIZLI KOŞAN VARSA GELSİN İNDİRSİN
+                        </p>
+                            
+                             <svg width="24" height="16" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="1200" height="800" fill="#E30A17"/>
+                                <circle cx="425" cy="400" r="200" fill="#FFFFFF"/>
+                                <circle cx="475" cy="400" r="160" fill="#E30A17"/>
+                                <polygon points="735,400 605,442 655,331 655,469 605,358" fill="#FFFFFF"/>
+                            </svg>
+                        </div>
+                       
                     </div>
                 </div>
             </div>
 
-            {/* Alt Bilgi ve Yasal Haklar */}
             <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-gray-400">
                 <div>© 2026 EkolHome Tekstil. Tüm hakları saklıdır.</div>
                 <div className="flex gap-8 items-center">
-                    {/* Iubenda Gizlilik Politikası Butonu */}
-                    <a
-                        href="https://www.iubenda.com/privacy-policy/32672466"
-                        className="iubenda-white iubenda-noiframe iubenda-embed hover:text-black transition-colors"
-                        title="Privacy Policy"
-                    >
-                        Gizlilik Politikası
-                    </a>
-
+                    <a href="https://www.iubenda.com/privacy-policy/32672466" className="hover:text-black transition-colors">Gizlilik Politikası</a>
                     <a href="#" className="hover:text-black transition-colors">Kullanım Koşulları</a>
                 </div>
             </div>
 
-            {/* Iubenda Scriptini Next.js yapısına uygun ekliyoruz */}
             <Script id="iubenda-setup" strategy="afterInteractive">
                 {`
                     (function (w,d) {var loader = function () {var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src="https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener("load", loader, false);}else if(w.attachEvent){w.attachEvent("onload", loader);}else{w.onload = loader;}})(window, document);

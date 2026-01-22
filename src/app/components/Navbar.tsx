@@ -3,30 +3,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { client } from "@/sanity/lib/client";
 
 const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [servicesOpen, setServicesOpen] = useState(false);
     const [dynamicServices, setDynamicServices] = useState<{ name: string; href: string; id: string }[]>([]);
 
-    // Sanity'den hizmetleri otomatik çekiyoruz
-    useEffect(() => {
-        const fetchServices = async () => {
-            // _id'yi de çekiyoruz ki key hatasını tamamen engelleyelim
-            const query = `*[_type == "service"]{ _id, title, "slug": slug.current }`;
-            const data = await client.fetch(query);
-            const formattedServices = data.map((service: any) => ({
-                id: service._id,
-                name: service.title,
-                href: `/hizmetlerimiz/${service.slug}`
-            }));
-            setDynamicServices(formattedServices);
-        };
-
-        fetchServices();
-    }, []);
-
+   
     const NAV_LINKS = [
         { name: "Koleksiyonlar", href: "/katalog" },
         {
