@@ -12,7 +12,7 @@ const Navbar = () => {
 
     const NAV_LINKS = [
         { name: "katalog", href: "/katalog" },
-        { name: "Koleksiyonlar", href: "/katalog" },
+        { name: "Koleksiyonlar", href: "/koleksiyonlar" },
         {
             name: "Hizmetlerimiz",
             href: "/hizmetlerimiz",
