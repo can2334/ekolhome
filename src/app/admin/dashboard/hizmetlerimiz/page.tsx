@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     Loader2, Plus, Trash2, Edit3,
-    Globe, Save, X, Image as ImageIcon,
-    UploadCloud
+    Save, X, Image as ImageIcon,
+    UploadCloud, Link as LinkIcon
 } from "lucide-react";
 import Sidebar from "../../Sidebar";
 
@@ -26,7 +26,8 @@ export default function AdminHizmetler() {
         content: "",
         cover_image: "",
         extra_images: "",
-        category: "Mobilya"
+        category: "Mobilya",
+        status: "active"
     });
 
     const fetchHizmetler = async () => {
@@ -45,7 +46,7 @@ export default function AdminHizmetler() {
 
     const handleFileUpload = async (file: File) => {
         if (!form.slug) {
-            alert("Lütfen önce bir başlık girerek slug oluşmasını sağlayın!");
+            alert("Önce başlık girerek slug oluşmasını sağlayın!");
             return null;
         }
         setIsUploading(true);
@@ -60,7 +61,7 @@ export default function AdminHizmetler() {
             return data.url;
         } catch (err) {
             setIsUploading(false);
-            alert("Dosya yüklenemedi!");
+            alert("Yükleme hatası!");
             return null;
         }
     };
@@ -79,12 +80,12 @@ export default function AdminHizmetler() {
                 resetForm();
                 fetchHizmetler();
             }
-        } catch (err) { alert("Kaydedilemedi!"); }
+        } catch (err) { alert("Hata oluştu!"); }
         setLoading(false);
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Bu koleksiyon silinsin mi?")) return;
+        if (!confirm("Emin misiniz?")) return;
         await fetch(`${API_URL}/delete`, {
             method: "POST",
             body: JSON.stringify({ id }),
@@ -93,241 +94,237 @@ export default function AdminHizmetler() {
     };
 
     const resetForm = () => {
-        setForm({ id: null, title: "", slug: "", description: "", content: "", cover_image: "", extra_images: "", category: "Mobilya" });
+        setForm({ id: null, title: "", slug: "", description: "", content: "", cover_image: "", extra_images: "", category: "Mobilya", status: "active" });
     };
 
     const updateTitle = (val: string) => {
         const slug = val.toLowerCase().trim()
-            .replace(/[^\w ]+/g, '')
-            .replace(/ +/g, '-');
+            .replace(/[ğĞ]/g, 'g').replace(/[üÜ]/g, 'u').replace(/[şŞ]/g, 's')
+            .replace(/[ıİ]/g, 'i').replace(/[öÖ]/g, 'o').replace(/[çÇ]/g, 'c')
+            .replace(/[^\w ]+/g, '').replace(/ +/g, '-');
         setForm({ ...form, title: val, slug: slug });
     };
 
     return (
-        <div className="min-h-screen bg-[#0F0F0F] text-white flex font-sans overflow-hidden">
+        <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col md:flex-row font-sans relative">
             <Sidebar />
 
-            <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0A0A0A]">
-                <header className="h-20 border-b border-white/5 flex items-center justify-between px-12 bg-[#0A0A0A]/80 backdrop-blur-xl z-30">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-xs font-bold tracking-[0.4em] uppercase text-[#d9a066]">Koleksiyon Yönetimi</h1>
-                        <span className="text-[10px] text-white/20">/</span>
-                        <span className="text-[10px] text-white/40 uppercase tracking-widest">{hizmetler.length} Ürün</span>
-                    </div>
+            <main className="flex-1 flex flex-col h-screen overflow-hidden">
+                <header className="sticky top-0 z-[50] w-full border-b border-white/5 bg-[#0A0A0A]/80 backdrop-blur-xl shrink-0">
+                    <div className="flex items-center justify-between p-4 md:p-6">
+                        <div className="flex flex-col">
+                            <h1 className="text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase text-[#d9a066]">
+                                Koleksiyon
+                            </h1>
+                            <p className="text-[9px] text-white/30 uppercase tracking-widest">
+                                {hizmetler.length} Kayıt
+                            </p>
+                        </div>
 
-                    <button
-                        onClick={() => { resetForm(); setIsModalOpen(true); }}
-                        className="bg-[#d9a066] text-black text-[10px] font-bold px-6 py-3 rounded-full uppercase tracking-widest hover:bg-white transition-all shadow-lg shadow-[#d9a066]/10 flex items-center gap-2"
-                    >
-                        <Plus size={14} /> Yeni Koleksiyon Ekle
-                    </button>
+                        {/* Yeni Ekle Butonunu Buraya Taşıdım - Mobilde Görünmesi İçin */}
+                        <button
+                            onClick={() => { resetForm(); setIsModalOpen(true); }}
+                            className="bg-[#d9a066] text-black text-[10px] font-bold px-4 py-2 rounded-full uppercase tracking-widest hover:bg-white transition-all flex items-center gap-2"
+                        >
+                            <Plus size={14} />
+                            <span className="hidden xs:inline">Yeni Ekle</span>
+                        </button>
+                    </div>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-12 space-y-10">
-                    <div className="grid grid-cols-1 gap-4 pb-20">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8">
+                    <div className="grid grid-cols-1 gap-3 pb-24">
+                        <button
+                            onClick={() => { resetForm(); setIsModalOpen(true); }}
+                            className="bg-[#d9a066] text-black text-[10px] font-bold px-4 py-2.5 rounded-full uppercase tracking-widest hover:bg-white transition-all flex items-center gap-2 shadow-lg shadow-[#d9a066]/10"
+                        >
+                            <Plus size={14} /> <span>Yeni Ekle</span>
+                        </button>
                         {hizmetler.map((item) => (
-                            <div key={item.id} className="bg-[#121212] border border-white/5 p-5 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 hover:border-[#d9a066]/30 transition-all group">
-                                <div className="flex items-center gap-6 flex-1">
-                                    <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shrink-0 flex items-center justify-center">
-                                        {/* DÜZELTME: src="" hatasını önlemek için kontrol */}
-                                        {item.cover_image ? (
-                                            <img src={item.cover_image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.title} />
-                                        ) : (
-                                            <ImageIcon className="text-white/10" size={24} />
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-[9px] text-[#d9a066] font-bold uppercase tracking-[0.2em]">{item.category}</span>
-                                        <p className="text-sm font-medium text-white group-hover:text-[#d9a066] transition-colors uppercase tracking-tight">{item.title}</p>
-                                        <div className="flex items-center gap-3 text-[10px] text-gray-500 font-mono">
-                                            <span className="flex items-center gap-1"><Globe size={10} /> /{item.slug}</span>
-                                        </div>
-                                    </div>
+                            <div key={item.id} className="bg-[#121212] border border-white/5 p-3 md:p-4 rounded-2xl flex items-center gap-3 md:gap-4 hover:border-[#d9a066]/40 transition-all group">
+                                <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden bg-white/5 shrink-0 border border-white/10">
+                                    {item.cover_image ? <img src={item.cover_image} className="w-full h-full object-cover" alt="" /> : <ImageIcon className="m-auto mt-4 md:mt-5 opacity-10" size={20} />}
                                 </div>
-
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => { setForm(item); setIsModalOpen(true); }}
-                                        className="p-4 bg-white/5 rounded-2xl hover:bg-[#d9a066] hover:text-black transition-all"
-                                    >
-                                        <Edit3 size={18} />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-[8px] md:text-[9px] text-[#d9a066] font-bold uppercase tracking-widest">{item.category}</span>
+                                        <div className={`w-1 h-1 rounded-full ${item.status === 'active' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-white/20'}`}></div>
+                                    </div>
+                                    <h3 className="text-xs md:text-sm font-medium truncate uppercase tracking-tight">{item.title}</h3>
+                                    <p className="text-[9px] text-white/20 font-mono truncate">/{item.slug}</p>
+                                </div>
+                                <div className="flex gap-1.5 md:gap-2">
+                                    <button onClick={() => { setForm(item); setIsModalOpen(true); }} className="p-2.5 bg-white/5 rounded-xl hover:bg-[#d9a066] hover:text-black transition-colors">
+                                        <Edit3 size={14} className="md:w-4 md:h-4" />
                                     </button>
-                                    <button
-                                        onClick={() => handleDelete(item.id)}
-                                        className="p-4 bg-white/5 rounded-2xl hover:bg-red-500/20 hover:text-red-500 transition-all"
-                                    >
-                                        <Trash2 size={18} />
+                                    <button onClick={() => handleDelete(item.id)} className="p-2.5 bg-white/5 rounded-xl hover:bg-red-500/20 hover:text-red-500 transition-colors">
+                                        <Trash2 size={14} className="md:w-4 md:h-4" />
                                     </button>
                                 </div>
                             </div>
                         ))}
+
+                        {hizmetler.length === 0 && (
+                            <div className="text-center py-20 border-2 border-dashed border-white/5 rounded-[2rem]">
+                                <p className="text-white/20 text-xs uppercase tracking-[0.2em]">Henüz koleksiyon eklenmemiş</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>
 
+            {/* MODAL - Mobilde ekranı tam kaplayan ve scroll olan yapı */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-6">
-                    <div className="bg-[#121212] border border-white/10 rounded-[3rem] w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <form onSubmit={handleSave} className="p-12 space-y-10">
-                            <div className="flex justify-between items-center border-b border-white/5 pb-8">
-                                <div>
-                                    <h2 className="text-[#d9a066] text-xs font-bold uppercase tracking-[0.4em]">{form.id ? "Koleksiyonu Düzenle" : "Yeni Kayıt Oluştur"}</h2>
-                                    <p className="text-[10px] text-gray-500 mt-2 uppercase tracking-widest">Ekol Home İçerik Yönetim Sistemi</p>
-                                </div>
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="h-12 w-12 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">
-                                    <X size={20} />
-                                </button>
-                            </div>
+                <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/95 backdrop-blur-md">
+                    <div className="bg-[#0F0F0F] w-full max-w-4xl h-[100dvh] md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col md:rounded-[2.5rem] border-t md:border border-white/10">
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                                <div className="space-y-8">
-                                    <div className="flex flex-col gap-3">
-                                        <label className="text-[10px] text-[#d9a066] font-bold tracking-widest uppercase">Koleksiyon Başlığı</label>
+                        {/* Modal Header */}
+                        <div className="p-5 md:p-8 border-b border-white/5 flex items-center justify-between shrink-0">
+                            <div>
+                                <h2 className="text-[#d9a066] text-xs font-bold uppercase tracking-[0.2em]">{form.id ? "Düzenle" : "Yeni Kayıt"}</h2>
+                                <p className="text-[9px] text-white/30 mt-1 uppercase">Koleksiyon detaylarını girin</p>
+                            </div>
+                            <button onClick={() => setIsModalOpen(false)} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal İçerik - Scroll Buraya Verildi */}
+                        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 md:p-10 space-y-6 md:space-y-8 pb-32 md:pb-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
+
+                                {/* Sol Kolon */}
+                                <div className="space-y-5">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Başlık</label>
                                         <input
                                             value={form.title}
                                             onChange={e => updateTitle(e.target.value)}
-                                            className="bg-white/[0.03] border border-white/10 p-5 rounded-2xl outline-none focus:border-[#d9a066] text-sm uppercase tracking-tighter"
-                                            placeholder="Modern Lüx Salon..."
-                                            required
+                                            className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl focus:border-[#d9a066] outline-none transition-all text-sm"
+                                            placeholder="Modern Koltuk Takımı" required
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div className="flex flex-col gap-3">
-                                            <label className="text-[10px] text-[#d9a066] font-bold tracking-widest uppercase">Kategori</label>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1 flex items-center gap-2">
+                                            <LinkIcon size={12} /> Otomatik URL (Slug)
+                                        </label>
+                                        <input
+                                            value={form.slug}
+                                            readOnly
+                                            className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-xs font-mono text-white/30 cursor-not-allowed"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Kategori</label>
                                             <select
                                                 value={form.category}
                                                 onChange={e => setForm({ ...form, category: e.target.value })}
-                                                className="bg-white/[0.03] border border-white/10 p-5 rounded-2xl outline-none focus:border-[#d9a066] text-xs text-white appearance-none"
+                                                className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl text-xs outline-none appearance-none"
                                             >
-                                                <option className="bg-[#121212]" value="Mobilya">Mobilya</option>
-                                                <option className="bg-[#121212]" value="İç Mimari">İç Mimari</option>
-                                                <option className="bg-[#121212]" value="Özel Tasarım">Özel Tasarım</option>
-                                                <option className="bg-[#121212]" value="Aksesuar">Aksesuar</option>
+                                                <option value="Mobilya">Mobilya</option>
+                                                <option value="İç Mimari">İç Mimari</option>
+                                                <option value="Tasarım">Tasarım</option>
                                             </select>
                                         </div>
-                                        <div className="flex flex-col gap-3">
-                                            <label className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Slug (URL)</label>
-                                            <div className="bg-white/5 border border-white/5 p-5 rounded-2xl text-[10px] font-mono text-gray-400 overflow-hidden truncate">
-                                                /{form.slug}
-                                            </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Durum</label>
+                                            <select
+                                                value={form.status}
+                                                onChange={e => setForm({ ...form, status: e.target.value })}
+                                                className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl text-xs outline-none"
+                                            >
+                                                <option value="active">Yayında</option>
+                                                <option value="passive">Gizli</option>
+                                            </select>
                                         </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-3">
-                                        <label className="text-[10px] text-[#d9a066] font-bold tracking-widest uppercase">Kısa Açıklama</label>
-                                        <textarea
-                                            value={form.description}
-                                            onChange={e => setForm({ ...form, description: e.target.value })}
-                                            className="bg-white/[0.03] border border-white/10 p-5 rounded-2xl outline-none focus:border-[#d9a066] text-sm h-32 resize-none"
-                                            placeholder="Liste ekranında görünecek kısa metin..."
-                                        />
                                     </div>
                                 </div>
 
-                                <div className="space-y-8">
-                                    <div className="flex flex-col gap-3">
-                                        <label className="text-[10px] text-[#d9a066] font-bold tracking-widest uppercase">Kapak Görseli</label>
-                                        <div className="relative group min-h-[160px] bg-white/[0.03] border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center p-4 transition-all hover:border-[#d9a066]">
-                                            {/* DÜZELTME: Modal içindeki kapak görseli kontrolü */}
-                                            {form.cover_image && form.cover_image !== "" ? (
-                                                <div className="relative w-full h-32">
-                                                    <img src={form.cover_image} className="w-full h-full object-cover rounded-2xl" alt="Kapak Önizleme" />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setForm({ ...form, cover_image: "" })}
-                                                        className="absolute -top-2 -right-2 bg-red-500 p-1 rounded-full shadow-xl z-10"
-                                                    >
-                                                        <X size={12} />
-                                                    </button>
-                                                </div>
-                                            ) : (
+                                {/* Sağ Kolon */}
+                                <div className="space-y-5">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Kapak Görseli</label>
+                                        <div className="relative h-40 bg-white/[0.02] border-2 border-dashed border-white/10 rounded-3xl flex items-center justify-center overflow-hidden group">
+                                            {form.cover_image ? (
                                                 <>
-                                                    <UploadCloud className="text-white/20 group-hover:text-[#d9a066] mb-2" size={32} />
-                                                    <span className="text-[9px] text-white/40 uppercase font-bold">Kapak Fotoğrafı Yükle</span>
-                                                    <input
-                                                        type="file"
-                                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                                        accept="image/*"
-                                                        onChange={async (e) => {
-                                                            if (e.target.files?.[0]) {
-                                                                const url = await handleFileUpload(e.target.files[0]);
-                                                                if (url) setForm({ ...form, cover_image: url });
-                                                            }
-                                                        }}
-                                                    />
+                                                    <img src={form.cover_image} className="w-full h-full object-cover" alt="Kapak" />
+                                                    <button type="button" onClick={() => setForm({ ...form, cover_image: "" })} className="absolute top-3 right-3 p-2 bg-red-500 rounded-full shadow-xl"><X size={14} /></button>
                                                 </>
+                                            ) : (
+                                                <div className="text-center">
+                                                    <UploadCloud className="mx-auto mb-2 text-white/10" size={32} />
+                                                    <p className="text-[9px] uppercase tracking-widest text-white/20 font-bold">Resim Seç</p>
+                                                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={async e => {
+                                                        const url = await handleFileUpload(e.target.files?.[0]!);
+                                                        if (url) setForm({ ...form, cover_image: url });
+                                                    }} />
+                                                </div>
                                             )}
-                                            {isUploading && <div className="absolute inset-0 bg-black/50 rounded-3xl flex items-center justify-center z-20"><Loader2 className="animate-spin text-[#d9a066]" /></div>}
+                                            {isUploading && <div className="absolute inset-0 bg-black/80 flex items-center justify-center"><Loader2 className="animate-spin text-[#d9a066]" /></div>}
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-3">
-                                        <label className="text-[10px] text-[#d9a066] font-bold tracking-widest uppercase">Galeri Resimleri</label>
-                                        <div className="grid grid-cols-3 gap-3">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Galeri Resimleri</label>
+                                        <div className="grid grid-cols-4 gap-2">
                                             {form.extra_images.split(',').filter(Boolean).map((img, idx) => (
                                                 <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group">
-                                                    <img src={img} className="w-full h-full object-cover" alt={`Galeri ${idx}`} />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const arr = form.extra_images.split(',').filter(Boolean);
-                                                            arr.splice(idx, 1);
-                                                            setForm({ ...form, extra_images: arr.join(',') });
-                                                        }}
-                                                        className="absolute inset-0 bg-red-500/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    <img src={img} className="w-full h-full object-cover" alt="" />
+                                                    <button type="button" onClick={() => {
+                                                        let arr = form.extra_images.split(',').filter(Boolean);
+                                                        arr.splice(idx, 1);
+                                                        setForm({ ...form, extra_images: arr.join(',') });
+                                                    }} className="absolute inset-0 bg-red-600/70 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Trash2 size={12} /></button>
                                                 </div>
                                             ))}
-                                            <div className="relative aspect-square bg-white/5 border-2 border-dashed border-white/10 rounded-xl flex items-center justify-center hover:border-[#d9a066] transition-all group">
-                                                <Plus className="text-white/20 group-hover:text-[#d9a066]" />
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                                    accept="image/*"
-                                                    onChange={async (e) => {
-                                                        if (e.target.files) {
-                                                            const files = Array.from(e.target.files);
-                                                            let newUrls = [...form.extra_images.split(',').filter(Boolean)];
-                                                            for (const f of files) {
-                                                                const url = await handleFileUpload(f);
-                                                                if (url) newUrls.push(url);
-                                                            }
-                                                            setForm({ ...form, extra_images: newUrls.join(',') });
-                                                        }
-                                                    }}
-                                                />
+                                            <div className="aspect-square bg-white/5 border border-dashed border-white/10 rounded-xl flex items-center justify-center relative hover:bg-white/10 transition-colors">
+                                                <Plus size={16} className="text-white/20" />
+                                                <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => {
+                                                    const files = Array.from(e.target.files || []);
+                                                    let urls = [...form.extra_images.split(',').filter(Boolean)];
+                                                    for (const f of files) {
+                                                        const url = await handleFileUpload(f);
+                                                        if (url) urls.push(url);
+                                                    }
+                                                    setForm({ ...form, extra_images: urls.join(',') });
+                                                }} />
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-3">
-                                        <label className="text-[10px] text-[#d9a066] font-bold tracking-widest uppercase">Detaylı İçerik</label>
-                                        <textarea
-                                            value={form.content}
-                                            onChange={e => setForm({ ...form, content: e.target.value })}
-                                            className="bg-white/[0.03] border border-white/10 p-5 rounded-2xl outline-none focus:border-[#d9a066] text-sm h-32 resize-none"
-                                            placeholder="Sayfa içindeki tüm detaylı yazı..."
-                                        />
                                     </div>
                                 </div>
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={loading || isUploading}
-                                className="w-full bg-[#d9a066] text-black font-bold py-6 rounded-[2rem] uppercase tracking-[0.3em] text-xs hover:bg-white transition-all shadow-2xl shadow-[#d9a066]/20 flex items-center justify-center gap-3 disabled:opacity-50"
-                            >
-                                {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                                {form.id ? "DEĞİŞİKLİKLERİ KAYDET" : "YENİ KOLEKSİYONU YAYINLA"}
-                            </button>
+                            <div className="space-y-2 pt-4">
+                                <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">İçerik Detayı</label>
+                                <textarea
+                                    value={form.content}
+                                    onChange={e => setForm({ ...form, content: e.target.value })}
+                                    className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl h-40 resize-none outline-none focus:border-[#d9a066] text-sm"
+                                    placeholder="Detaylı açıklama yazın..."
+                                />
+                            </div>
+
+                            {/* Mobilde altta sabit kalan kaydet butonu (isteğe bağlı) veya form sonu butonu */}
+                            <div className="pt-6">
+                                <button
+                                    type="submit"
+                                    disabled={loading || isUploading}
+                                    className="w-full bg-[#d9a066] text-black font-bold py-5 rounded-[2rem] uppercase tracking-[0.2em] text-[11px] hover:bg-white transition-all shadow-2xl flex items-center justify-center gap-3 disabled:opacity-50"
+                                >
+                                    {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                                    {form.id ? "GÜNCELLEMEYİ KAYDET" : "KOLEKSİYONU YAYINLA"}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
             )}
+
+            {/* Arka Plan Süsü (Opsiyonel) */}
+            <div className="fixed -bottom-24 -right-24 w-96 h-96 bg-[#d9a066]/5 blur-[120px] rounded-full -z-10 pointer-events-none"></div>
         </div>
     );
 }
