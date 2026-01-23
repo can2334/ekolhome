@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Image from 'next/image';
-import { Download, Eye } from 'lucide-react';
+import { Download, Eye, FileText } from 'lucide-react';
 import { motion } from "framer-motion";
+import Link from "next/link"; // Next.js Link bileşeni eklendi
 
-// Worker API Endpoint
 const API_URL = "https://ekolhome.smusa9883x.workers.dev/api/catalog";
 
 interface KatalogItem {
@@ -31,9 +31,15 @@ export default function KatalogPage() {
             .catch(err => console.error("Katalog yüklenemedi:", err));
     }, []);
 
+    // Yardımcı fonksiyon: URL'lerin başına / ekler
+    const formatUrl = (path: string) => path.startsWith('/') ? path : `/${path}`;
+
     if (loading) return (
-        <div className="min-h-screen bg-white flex items-center justify-center text-[10px] tracking-[0.3em] uppercase opacity-50">
-            Koleksiyonlar Hazırlanıyor...
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4">
+            <div className="w-12 h-12 border-2 border-[#d9a066] border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-[10px] tracking-[0.3em] uppercase text-gray-400 animate-pulse">
+                Koleksiyonlar Hazırlanıyor...
+            </div>
         </div>
     );
 
@@ -57,58 +63,78 @@ export default function KatalogPage() {
                     >
                         Dijital <span className="font-serif italic text-gray-500">Katalog</span>
                     </motion.h1>
-                    <div className="w-16 h-[1px] bg-black mx-auto"></div>
+                    <div className="w-16 h-[1px] bg-black mx-auto opacity-20"></div>
                 </header>
 
                 {/* Katalog Listesi */}
-                <div className="space-y-32">
+                <div className="space-y-40">
                     {kataloglar.map((item, index) => (
                         <motion.section
                             key={item.id}
                             initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-12 items-center`}
+                            viewport={{ once: true, margin: "-100px" }}
+                            className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-16 items-center`}
                         >
                             {/* Katalog Kapağı */}
                             <div className="w-full md:w-1/2 relative group">
-                                <div className="relative aspect-[3/4] overflow-hidden shadow-[30px_30px_60px_-15px_rgba(0,0,0,0.3)] bg-white rounded-sm">
-                                    <Image
-                                        src={item.cover_image}
-                                        alt={item.title}
-                                        fill
-                                        className="object-cover transition-transform duration-1000 group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
-                                        <a
-                                            href={item.pdf_url}
-                                            target="_blank"
-                                            className="bg-white text-black px-8 py-4 text-xs uppercase tracking-widest flex items-center gap-3 hover:bg-gray-100 transition-all transform translate-y-4 group-hover:translate-y-0 duration-500"
-                                        >
-                                            <Eye size={16} /> Hemen İncele
-                                        </a>
+                                <Link href={`/katalog/${item.id}`}> {/* Detay sayfasına link */}
+                                    <div className="relative aspect-[3/4] overflow-hidden shadow-[20px_40px_80px_-15px_rgba(0,0,0,0.2)] bg-white rounded-sm cursor-pointer">
+                                        <Image
+                                            src={formatUrl(item.cover_image)}
+                                            alt={item.title}
+                                            fill
+                                            className="object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110"
+                                            unoptimized
+                                        />
+                                        {/* Overlay Hover */}
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                                            <div className="flex flex-col items-center gap-4 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500">
+                                                <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20">
+                                                    <Eye size={20} />
+                                                </div>
+                                                <span className="text-white text-[10px] uppercase tracking-[0.3em] font-bold">Kataloğu Aç</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                </Link>
+                                {/* Arka Dekoratif Sayı */}
+                                <span className="absolute -bottom-10 -left-10 text-[12rem] font-black text-black/[0.03] -z-10 select-none hidden md:block">
+                                    0{index + 1}
+                                </span>
                             </div>
 
                             {/* Katalog Bilgisi */}
-                            <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
-                                <span className="text-[10px] text-[#d9a066] font-bold uppercase tracking-widest">{item.season}</span>
-                                <h3 className="text-4xl font-light text-black tracking-tight leading-tight">
-                                    {item.title} <br />
-                                    <span className="text-xl text-gray-400 font-serif italic tracking-normal">Tasarım & Uygulama</span>
-                                </h3>
-                                <p className="text-gray-500 font-light leading-relaxed max-w-md mx-auto md:mx-0">
-                                    {item.description || "Zanaatkar dokunuşların ve modern estetiğin bir araya geldiği özel koleksiyonumuzu detaylıca inceleyin."}
+                            <div className="w-full md:w-1/2 space-y-8 text-center md:text-left">
+                                <div className="space-y-2">
+                                    <span className="text-[10px] text-[#d9a066] font-black uppercase tracking-[0.4em]">{item.season}</span>
+                                    <h3 className="text-4xl md:text-5xl font-light text-black tracking-tight leading-tight uppercase">
+                                        {item.title}
+                                    </h3>
+                                    <div className="flex items-center gap-2 justify-center md:justify-start pt-2">
+                                        <div className="w-8 h-[1px] bg-[#d9a066]"></div>
+                                        <span className="text-xs text-gray-400 font-serif italic tracking-wide">Premium Tasarım Serisi</span>
+                                    </div>
+                                </div>
+
+                                <p className="text-gray-500 font-light leading-relaxed max-w-sm mx-auto md:mx-0 text-sm">
+                                    {item.description || "Zanaatkar dokunuşların ve modern estetiğin bir araya geldiği, Ekol Home imzası taşıyan özel koleksiyonumuzu detaylıca inceleyin."}
                                 </p>
 
-                                <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center md:justify-start">
-                                    <a
-                                        href={item.pdf_url}
-                                        download
-                                        className="flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold border-b border-black pb-2 hover:text-[#d9a066] hover:border-[#d9a066] transition-all"
+                                <div className="flex flex-col sm:flex-row gap-8 pt-6 justify-center md:justify-start items-center">
+                                    <Link
+                                        href={`/katalog/${item.id}`}
+                                        className="bg-black text-white px-10 py-4 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-[#d9a066] transition-all duration-300"
                                     >
-                                        <Download size={14} /> PDF Olarak İndir
+                                        Hemen İncele
+                                    </Link>
+
+                                    <a
+                                        href={formatUrl(item.pdf_url)}
+                                        download
+                                        className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold border-b border-black/10 pb-1 hover:text-[#d9a066] hover:border-[#d9a066] transition-all group"
+                                    >
+                                        <Download size={14} className="group-hover:-translate-y-1 transition-transform" /> PDF İNDİR
                                     </a>
                                 </div>
                             </div>
@@ -117,9 +143,17 @@ export default function KatalogPage() {
                 </div>
 
                 {/* Alt Bilgi */}
-                <footer className="mt-40 pt-20 border-t border-gray-100 text-center">
-                    <p className="text-sm text-gray-400 font-light italic">
-                        Basılı katalog talepleriniz için lütfen <a href="/iletisim" className="text-black border-b border-black hover:text-[#d9a066] transition-colors">merkez ofisimizle</a> iletişime geçiniz.
+                <footer className="mt-60 pt-20 border-t border-gray-100 text-center">
+                    <div className="mb-8 flex justify-center">
+                        <div className="p-4 bg-white shadow-sm rounded-full">
+                            <FileText className="text-[#d9a066]" size={24} />
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-400 font-light tracking-wide max-w-md mx-auto leading-relaxed">
+                        Basılı katalog talepleriniz veya projeleriniz için <br />
+                        <Link href="/iletisim" className="text-black font-bold border-b border-black/20 hover:text-[#d9a066] transition-colors uppercase ml-1">
+                            iletişim sayfamızı
+                        </Link> ziyaret edebilirsiniz.
                     </p>
                 </footer>
             </div>

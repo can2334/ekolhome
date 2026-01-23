@@ -70,3 +70,21 @@ body::before {
   z-index: 9999;
   background-image: url("https://res.cloudinary.com/dzv9v4m9v/image/upload/v1645100000/noise_v1.png");
 }
+
+.page-container {
+  perspective: 3000px;
+}
+
+.page-side {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.page-back {
+  transform: rotateY(180deg);
+}
