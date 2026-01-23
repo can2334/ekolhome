@@ -1,22 +1,10 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  reactCompiler: true,
-  reactStrictMode: true,
-  // Sitenin Next.js ile yapıldığını gizler (küçük bir güvenlik önlemi)
-  poweredByHeader: false, 
-
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   images: {
-    // Resimlerin patlamaması için gerekli olan Sanity ve Unsplash izinleri
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'cdn.sanity.io',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
+        hostname: '**', // BU SATIR SİHİRLİ: Tüm domainlere izin verir
       },
     ],
   },

@@ -1,95 +1,118 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Loader2, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 
-// Interface tanımı (TypeScript kullanıyorsan)
-interface Service {
+const API_URL = "https://ekolhome.smusa9883x.workers.dev/api/services";
+
+interface HizmetItem {
+    id: number;
     title: string;
-    slug: { current: string };
-    image: any;
-    desc: string;
+    slug: string; // Slug artık zorunlu
+    cover_image: string;
+    description: string;
+    category: string;
 }
 
-export default function HizmetlerimizPage() {
-    const [services, setServices] = useState<Service[]>([]);
+export default function HizmetlerPage() {
+    const [hizmetler, setHizmetler] = useState<HizmetItem[]>([]);
     const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        fetch(API_URL)
+            .then((res) => res.json())
+            .then((data) => {
+                setHizmetler(Array.isArray(data) ? data : []);
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Veri çekme hatası:", err);
+                setLoading(false);
+            });
+    }, []);
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>;
+    if (loading) return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="w-10 h-10 text-[#d9a066] animate-spin" />
+            <div className="text-[10px] tracking-[0.3em] uppercase text-gray-400 font-bold">Koleksiyonlar Hazırlanıyor...</div>
+        </div>
+    );
 
     return (
-        <main className="min-h-screen bg-white pt-32 pb-20 px-6">
-            <section className="max-w-7xl mx-auto mb-20">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row md:items-end justify-between gap-8"
-                >
-                    <div className="max-w-2xl">
-                        <span className="text-xs uppercase tracking-[0.4em] text-gray-400 mb-4 block font-medium">Uzmanlık Alanlarımız</span>
-                        <h1 className="text-5xl md:text-7xl font-extralight tracking-tighter leading-tight text-black">
-                            Zanaatın <br />
-                            <span className="font-serif italic text-gray-400">Modern Formu.</span>
-                        </h1>
-                    </div>
-                    <p className="text-gray-500 max-w-sm text-sm leading-relaxed mb-2">
-                        EkolHome olarak, mobilyanın sadece bir eşya değil, mekanı tamamlayan bir ruh olduğuna inanıyoruz.
-                    </p>
-                </motion.div>
-                <div className="w-full h-[1px] bg-gray-100 mt-12" />
-            </section>
+        <main className="min-h-screen bg-[#FBFBFB] pt-44 pb-20 px-6 font-sans">
+            <div className="max-w-7xl mx-auto">
+                <header className="mb-24">
+                    <span className="text-[#d9a066] text-[10px] font-bold tracking-[0.5em] uppercase block mb-4">
+                        Ekol Home — Exclusive
+                    </span>
+                    <h1 className="text-5xl md:text-8xl font-extralight tracking-tighter text-black uppercase leading-[0.9]">
+                        Hizmet <br /> <span className="font-serif italic text-gray-400 lowercase">Koleksiyonları</span>
+                    </h1>
+                </header>
 
-            <section className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-x-16 lg:gap-y-24">
-                    {services.map((service, index) => (
-                        <motion.div
-                            key={service.slug.current}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, margin: "-50px" }}
-                            transition={{ delay: index * 0.05 }}
-                            className={`group cursor-pointer ${index % 3 === 1 ? 'lg:mt-16' : ''}`}
-                        >
-                            <Link href={`/hizmetlerimiz/${service.slug.current}`}>
-                                <div className="relative aspect-[4/5] overflow-hidden bg-gray-50 mb-6">
-                                    <Image
-                                        // Sanity Image Helper kullanımı
-                                        src={(service.image).url()}
-                                        alt={service.title}
-                                        fill
-                                        priority={index < 3}
-                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                        className="object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-105 grayscale-[50%] group-hover:grayscale-0"
-                                    />
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-500 flex items-center justify-center">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100 transition-all duration-500 shadow-sm">
-                                            <ArrowUpRight className="text-black" size={20} />
+                {hizmetler.length === 0 ? (
+                    <div className="text-center py-20 border-y border-black/5">
+                        <p className="text-gray-400 text-xs uppercase tracking-widest">Henüz bir koleksiyon eklenmemiş.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-20">
+                        {hizmetler.map((hizmet, index) => (
+                            <motion.div
+                                key={hizmet.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1 }}
+                                className="group"
+                            >
+                                {/* DÜZELTME: Link yapısını id yerine slug'a çevirdik */}
+                                <Link href={`/hizmetlerimiz/${hizmet.slug || hizmet.id}`} className="block">
+                                    <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 mb-8 shadow-2xl">
+                                        <img
+                                            src={hizmet.cover_image || "/placeholder.jpg"}
+                                            className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
+                                            alt={hizmet.title}
+                                        />
+                                        <div className="absolute inset-0 bg-black/5 group-hover:bg-black/20 transition-colors" />
+
+                                        <div className="absolute top-6 left-6">
+                                            <span className="bg-white/90 backdrop-blur-sm text-black text-[9px] font-bold px-3 py-1 uppercase tracking-widest">
+                                                {hizmet.category || "TASARIM"}
+                                            </span>
+                                        </div>
+
+                                        <div className="absolute bottom-8 left-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                                            <ArrowUpRight size={32} strokeWidth={1} />
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
 
-                                <div className="space-y-2">
-                                    <h3 className="text-xl font-light tracking-tight text-black flex items-center justify-between">
-                                        {service.title}
-                                        <span className="text-[10px] text-gray-300 font-mono">0{index + 1}</span>
-                                    </h3>
-                                    <p className="text-gray-400 text-sm leading-relaxed line-clamp-2">
-                                        {service.desc}
+                                <div className="space-y-4 px-2">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-2xl font-light uppercase tracking-tight text-black">
+                                            {hizmet.title}
+                                        </h3>
+                                        <span className="text-[10px] text-gray-300 font-medium">0{index + 1}</span>
+                                    </div>
+                                    <p className="text-gray-500 text-xs leading-relaxed font-light min-h-[3em]">
+                                        {hizmet.description || "Zanaatkarlığın ve estetiğin buluştuğu özel tasarım hizmetimiz."}
                                     </p>
-                                    <div className="pt-4 flex items-center gap-2">
-                                        <div className="h-[1px] w-0 group-hover:w-8 bg-black transition-all duration-500" />
-                                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-0 group-hover:opacity-100 transition-all duration-500">İncele</span>
+                                    <div className="pt-4">
+                                        <Link
+                                            href={`/hizmetlerimiz/${hizmet.slug || hizmet.id}`}
+                                            className="text-[10px] font-bold uppercase tracking-[0.2em] border-b border-black/10 pb-1 hover:border-[#d9a066] hover:text-[#d9a066] transition-all"
+                                        >
+                                            Projeyi İncele
+                                        </Link>
                                     </div>
                                 </div>
-                            </Link>
-                        </motion.div>
-                    ))}
-                </div>
-            </section>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </main>
     );
 }

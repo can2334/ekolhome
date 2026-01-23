@@ -29,8 +29,9 @@ export default function Sidebar() {
     const sidebarItems = [
         { name: "Genel Bakış", icon: <LayoutDashboard size={18} />, href: "/admin/dashboard" },
         { name: "Kataloglar", icon: <FileText size={18} />, href: "/admin/dashboard/katalog" },
-        { name: "Referanslar", icon: <ImageIcon size={18} />, href: "/admin/dashboard/references" },
+        { name: "Referanslar", icon: <ImageIcon size={18} />, href: "/admin/dashboard/referanslar" },
         { name: "İletişim", icon: <Phone size={18} />, href: "/admin/dashboard/iletisim" },
+        { name: "hizmetlerimiz", icon: <Phone size={18} />, href: "/admin/dashboard/hizmetlerimiz" },
         { name: "Ayarlar", icon: <Settings size={18} />, href: "/admin/dashboard/settings" },
     ];
 

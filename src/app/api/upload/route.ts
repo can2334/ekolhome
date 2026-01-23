@@ -2,37 +2,33 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
     try {
-        const formData = await request.formData();
+        const formData = await req.formData();
         const file = formData.get("file") as File;
+        const folderName = formData.get("folder") as string || "genel";
 
-        if (!file) return NextResponse.json({ error: "Dosya seçilmedi" }, { status: 400 });
+        if (!file) return NextResponse.json({ error: "Dosya bulunamadı" }, { status: 400 });
 
-        const buffer = Buffer.from(await file.arrayBuffer());
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
 
-        // 1. Dosya adını tamamen temizle (Küçük harfe çevir ve Türkçe karakterleri İngilizce yap)
-        const safeFileName = file.name
-            .toLowerCase() // Hepsini küçük harf yap (Büyük İ sorunu kalmaz)
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") // Aksanları ve Türkçe karakterleri temizle
-            .replace(/[^a-z0-9.]/g, "_"); // Harf, rakam ve nokta dışındaki her şeyi alt tire yap
+        // Klasör yolunu oluştur: public/uploads/hizmetler/slug-adi
+        const uploadDir = path.join(process.cwd(), "public/uploads/hizmetler", folderName);
 
-        const filename = `${Date.now()}_${safeFileName}`;
-
-        // 2. Yolu kesinleştir (Garantili root dizin)
-        const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-        // 3. Klasör yoksa oluştur
+        // Klasör yoksa oluştur (recursive: true sayesinde iç içe klasör açabilir)
         await mkdir(uploadDir, { recursive: true });
 
-        // 4. Dosyayı fiziksel olarak yaz
-        await writeFile(path.join(uploadDir, filename), buffer);
+        // Dosya ismini temizle ve benzersiz yap
+        const fileName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+        const filePath = path.join(uploadDir, fileName);
 
-        // 5. URL döndür (Başına / koyarak)
-        return NextResponse.json({ filePath: `/uploads/${filename}` });
-    } catch (err) {
-        console.error("Upload Error:", err);
-        return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
+        await writeFile(filePath, buffer);
+
+        // Frontend'in erişeceği URL'i dön (Next.js public klasörünü / kökünden sunar)
+        return NextResponse.json({ url: `/uploads/hizmetler/${folderName}/${fileName}` });
+    } catch (error) {
+        console.error("Yükleme hatası:", error);
+        return NextResponse.json({ error: "Dosya yüklenirken bir hata oluştu" }, { status: 500 });
     }
 }
