@@ -9,8 +9,9 @@ const Navbar = () => {
     const [servicesOpen, setServicesOpen] = useState(false);
     const [dynamicServices, setDynamicServices] = useState<{ name: string; href: string; id: string }[]>([]);
 
-   
+
     const NAV_LINKS = [
+        { name: "katalog", href: "/katalog" },
         { name: "Koleksiyonlar", href: "/katalog" },
         {
             name: "Hizmetlerimiz",
