@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, User, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
+import { Lock, User, ArrowRight, ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 
 export default function AdminLoginPage() {
     const [username, setUsername] = useState("");
@@ -17,15 +17,50 @@ export default function AdminLoginPage() {
         setIsLoading(true);
         setError("");
 
-        setTimeout(() => {
-            if (username === "admin" && password === "123") {
-                localStorage.setItem("admin_token", "ekolhome_secret_token_2026");
+        // Frontend validasyon
+        if (!username.trim() || !password.trim()) {
+            setError("Kullanıcı adı ve şifre boş olamaz");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch("https://ekolhome.smusa9883x.workers.dev/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username: username.trim(),
+                    password: password.trim()
+                }),
+            });
+
+            // Response'u JSON olarak parse et
+            const data = await response.json();
+
+            // Başarılı giriş kontrolü
+            if (response.ok && data.success && data.token) {
+                // Token'ı localStorage'a kaydet
+                localStorage.setItem("admin_token", data.token);
+
+                // Kullanıcı bilgilerini kaydet (opsiyonel)
+                if (data.user) {
+                    localStorage.setItem("admin_user", JSON.stringify(data.user));
+                }
+
+                // Dashboard'a yönlendir
                 router.push("/admin/dashboard");
             } else {
-                setError("Kimlik bilgileri sistemle eşleşmedi.");
-                setIsLoading(false);
+                // Worker'dan gelen hata mesajını göster
+                setError(data.error || "Kimlik bilgileri hatalı");
             }
-        }, 1500);
+        } catch (err) {
+            console.error("Login error:", err);
+            setError("Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -55,18 +90,19 @@ export default function AdminLoginPage() {
                     </motion.div>
                 </div>
 
-                {/* Ana Kart - Glassmorphism */}
+                {/* Ana Kart */}
                 <div className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-[#d9a066] to-[#555] rounded-2xl opacity-20 group-hover:opacity-30 transition duration-1000"></div>
 
                     <div className="relative bg-[#121212]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-12 shadow-2xl">
                         <form onSubmit={handleLogin} className="space-y-8">
-
-                            {/* Input Grupları */}
                             <div className="space-y-6">
+                                {/* Kullanıcı Adı Input */}
                                 <div className="group/input">
                                     <div className="flex justify-between items-center mb-2 px-1">
-                                        <label className="text-[10px] uppercase tracking-widest text-gray-400 group-focus-within/input:text-[#d9a066] transition-colors">Yönetici Adı</label>
+                                        <label className="text-[10px] uppercase tracking-widest text-gray-400 group-focus-within/input:text-[#d9a066] transition-colors">
+                                            Yönetici Adı
+                                        </label>
                                         <User size={12} className="text-gray-600 group-focus-within/input:text-[#d9a066]" />
                                     </div>
                                     <input
@@ -74,14 +110,19 @@ export default function AdminLoginPage() {
                                         required
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/5 px-4 py-4 rounded-xl text-sm text-white outline-none focus:bg-white/10 focus:border-[#d9a066]/50 transition-all placeholder:text-gray-700"
+                                        disabled={isLoading}
+                                        className="w-full bg-white/5 border border-white/5 px-4 py-4 rounded-xl text-sm text-white outline-none focus:bg-white/10 focus:border-[#d9a066]/50 transition-all placeholder:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                         placeholder="Kullanıcı adınız..."
+                                        autoComplete="username"
                                     />
                                 </div>
 
+                                {/* Şifre Input */}
                                 <div className="group/input">
                                     <div className="flex justify-between items-center mb-2 px-1">
-                                        <label className="text-[10px] uppercase tracking-widest text-gray-400 group-focus-within/input:text-[#d9a066] transition-colors">Güvenlik Şifresi</label>
+                                        <label className="text-[10px] uppercase tracking-widest text-gray-400 group-focus-within/input:text-[#d9a066] transition-colors">
+                                            Güvenlik Şifresi
+                                        </label>
                                         <Lock size={12} className="text-gray-600 group-focus-within/input:text-[#d9a066]" />
                                     </div>
                                     <input
@@ -89,8 +130,10 @@ export default function AdminLoginPage() {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/5 px-4 py-4 rounded-xl text-sm text-white outline-none focus:bg-white/10 focus:border-[#d9a066]/50 transition-all placeholder:text-gray-700"
+                                        disabled={isLoading}
+                                        className="w-full bg-white/5 border border-white/5 px-4 py-4 rounded-xl text-sm text-white outline-none focus:bg-white/10 focus:border-[#d9a066]/50 transition-all placeholder:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                         placeholder="••••••••"
+                                        autoComplete="current-password"
                                     />
                                 </div>
                             </div>
@@ -102,28 +145,35 @@ export default function AdminLoginPage() {
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: 'auto' }}
                                         exit={{ opacity: 0, height: 0 }}
-                                        className="bg-red-500/10 border border-red-500/20 py-3 rounded-lg"
+                                        className="bg-red-500/10 border border-red-500/20 py-3 px-4 rounded-lg"
                                     >
                                         <p className="text-[11px] text-red-400 text-center tracking-wide flex items-center justify-center gap-2">
-                                            <ShieldCheck size={14} /> {error}
+                                            <AlertCircle size={14} /> {error}
                                         </p>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            {/* Giriş Butonu */}
+                            {/* Login Butonu */}
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="relative w-full overflow-hidden group/btn disabled:opacity-50 transition-all"
+                                className="relative w-full overflow-hidden group/btn disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
                                 <div className="absolute inset-0 bg-[#d9a066] transition-transform duration-500 group-hover/btn:scale-105"></div>
                                 <div className="relative bg-black text-white m-[1px] py-4 rounded-[14px] flex items-center justify-center gap-3 group-hover/btn:bg-transparent transition-colors duration-500">
                                     {isLoading ? (
-                                        <Loader2 size={18} className="animate-spin text-[#d9a066]" />
+                                        <>
+                                            <Loader2 size={18} className="animate-spin text-[#d9a066]" />
+                                            <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
+                                                Kontrol Ediliyor...
+                                            </span>
+                                        </>
                                     ) : (
                                         <>
-                                            <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">Erişim İste</span>
+                                            <span className="text-[11px] uppercase tracking-[0.4em] font-semibold">
+                                                Erişim İste
+                                            </span>
                                             <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                                         </>
                                     )}
@@ -133,7 +183,7 @@ export default function AdminLoginPage() {
                     </div>
                 </div>
 
-                {/* Güvenlik Notu */}
+                {/* Alt Bilgilendirme */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

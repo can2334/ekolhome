@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, MapPin, Phone, Mail, Trash2, Edit3, Globe, Save, X, ExternalLink } from "lucide-react";
 import Sidebar from "../../Sidebar";
+import toast, { Toaster } from "react-hot-toast"; // Toast eklendi
 
 const API_BASE = "https://ekolhome.smusa9883x.workers.dev/api/contact";
 
@@ -29,33 +30,71 @@ export default function AdminIletisim() {
 
     const handleSave = async () => {
         setLoading(true);
+        const token = localStorage.getItem("admin_token");
+
+        if (!token) {
+            toast.error("Oturum süresi dolmuş. Giriş yapın.");
+            router.push("/admin/login");
+            setLoading(false);
+            return;
+        }
+
         const endpoint = form.id ? `${API_BASE}/update` : `${API_BASE}/add`;
+
         try {
             const res = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify(form)
             });
-            if (res.ok) {
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                toast.success("Başarıyla kaydedildi!", { style: { borderRadius: '10px', background: '#333', color: '#fff' } });
                 setForm({ id: null, address: "", phone: "", email: "", map_url: "" });
                 fetchContacts();
+            } else {
+                toast.error(data.error || "Kaydetme başarısız!");
             }
-        } catch (error) { alert("Hata!"); }
+        } catch (error) {
+            toast.error("Sunucuya bağlanılamadı!");
+        }
+
         setLoading(false);
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Silinsin mi?")) return;
-        await fetch(`${API_BASE}/delete`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id })
-        });
-        fetchContacts();
+        toast((t) => (
+            <span className="flex items-center gap-4">
+                Silinsin mi?
+                <button className="bg-red-500 px-2 py-1 rounded text-xs" onClick={async () => {
+                    toast.dismiss(t.id);
+                    const token = localStorage.getItem("admin_token");
+                    if (!token) return;
+                    try {
+                        const res = await fetch(`${API_BASE}/delete`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                            body: JSON.stringify({ id })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            toast.success("Silindi");
+                            fetchContacts();
+                        }
+                    } catch (e) { toast.error("Hata oluştu"); }
+                }}>Evet</button>
+            </span>
+        ), { duration: 4000 });
     };
 
     return (
         <div className="min-h-screen bg-[#0F0F0F] text-white flex font-sans overflow-hidden">
+            <Toaster position="top-right" reverseOrder={false} /> {/* Konteyner eklendi */}
             <Sidebar />
             <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0A0A0A]">
                 <header className="h-20 border-b border-white/5 flex items-center justify-between px-12 bg-[#0A0A0A]/80 backdrop-blur-xl z-30">
@@ -64,11 +103,8 @@ export default function AdminIletisim() {
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-12 space-y-10">
-                    {/* --- ÜST FORM ALANI --- */}
                     <div className="bg-[#121212] rounded-[2.5rem] border border-white/5 p-10 shadow-2xl">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-
-                            {/* Adres ve İletişim */}
                             <div className="space-y-6 lg:col-span-2">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="flex flex-col gap-3">
@@ -97,7 +133,6 @@ export default function AdminIletisim() {
                                 </div>
                             </div>
 
-                            {/* Harita Önizleme Kutusu */}
                             <div className="flex flex-col gap-4">
                                 <label className="text-[10px] text-gray-500 font-bold tracking-widest uppercase text-center">Harita Önizleme</label>
                                 <div className="flex-1 min-h-[250px] bg-black rounded-3xl border border-white/5 overflow-hidden relative group">
@@ -122,7 +157,6 @@ export default function AdminIletisim() {
                         </div>
                     </div>
 
-                    {/* --- ALT LİSTE ALANI --- */}
                     <div className="space-y-6 pb-20">
                         <h2 className="text-[10px] text-[#d9a066] uppercase tracking-[0.4em] font-bold">MEVCUT KONUMLAR</h2>
                         <div className="grid grid-cols-1 gap-4">
@@ -139,7 +173,6 @@ export default function AdminIletisim() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
-
                                         <button onClick={() => setForm(item)} className="p-3 bg-white/5 rounded-xl hover:bg-blue-500/20 hover:text-blue-400 transition-all"><Edit3 size={18} /></button>
                                         <button onClick={() => handleDelete(item.id)} className="p-3 bg-white/5 rounded-xl hover:bg-red-500/20 hover:text-red-500 transition-all"><Trash2 size={18} /></button>
                                     </div>

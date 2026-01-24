@@ -1,0 +1,422 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Plus, Trash2, FileText, Download, Image } from "lucide-react";
+// @ts-ignore
+import { saveAs } from "file-saver";
+import {
+    Document as DocxDocument,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    WidthType,
+    ImageRun,
+    TextRun,
+    AlignmentType,
+    VerticalAlign,
+    ExternalHyperlink,
+    BorderStyle
+} from "docx";
+import {
+    Document as PDFDocument,
+    Page,
+    Text,
+    View,
+    StyleSheet,
+    Image as PDFImage,
+    Font,
+    pdf,
+    Link
+} from "@react-pdf/renderer";
+
+// Font Kaydı
+Font.register({
+    family: 'Roboto',
+    fonts: [
+        { src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf' },
+        { src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf', fontWeight: 'bold' }
+    ]
+});
+
+const pdfStyles = StyleSheet.create({
+    page: { padding: 30, backgroundColor: '#fff', fontSize: 10, fontFamily: 'Roboto' },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, borderBottomWidth: 2, borderBottomColor: '#EAB308', paddingBottom: 10 },
+    headerLeft: { flex: 1 },
+    logoContainer: { width: 80, height: 80, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 5 },
+    logo: { width: 70, height: 70, objectFit: 'contain' },
+    yellowHeader: { color: '#EAB308', fontSize: 20, fontWeight: 'bold', marginBottom: 5 },
+    firmInfo: { fontSize: 9, marginBottom: 2, fontWeight: 'bold' },
+    linkText: { color: '#2563EB', fontSize: 7, textDecoration: 'none', marginBottom: 1 },
+    clientSection: { marginTop: 10, marginBottom: 15, padding: 10, backgroundColor: '#F9FAFB', borderLeftWidth: 3, borderLeftColor: '#EAB308' },
+    infoLine: { marginBottom: 4, fontSize: 10, fontWeight: 'bold' },
+    table: { display: 'table' as any, width: '100%', borderWidth: 1, borderColor: '#000' },
+    tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#000', minHeight: 90 },
+    tableHeader: { backgroundColor: '#EAB308', minHeight: 30 },
+    cell: { padding: 5, borderRightWidth: 1, borderColor: '#000', justifyContent: 'center', alignItems: 'center' },
+    colImg: { width: '15%' },
+    colDesc: { width: '45%', alignItems: 'flex-start', paddingLeft: 8 },
+    colQty: { width: '10%' },
+    colPrice: { width: '15%' },
+    colTotal: { width: '15%', borderRightWidth: 0 },
+    cellHeader: { fontSize: 10, fontWeight: 'bold', color: '#000' },
+    cellDesc: { fontSize: 8, textAlign: 'left', lineHeight: 1.3 },
+    imageWrapper: { width: 70, height: 70, justifyContent: 'center', alignItems: 'center', padding: 3 },
+    image: { width: 64, height: 64, objectFit: 'cover' },
+    footer: { marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    warning: { color: '#DC2626', fontWeight: 'bold', fontSize: 9 },
+    totalBox: { backgroundColor: '#FEF3C7', borderWidth: 2, borderColor: '#EAB308', padding: 10, minWidth: 150 },
+    totalAmount: { color: '#DC2626', fontSize: 16, fontWeight: 'bold', textAlign: 'center' }
+});
+
+const TeklifPDF = ({ items, clientName, total, topic, date, logo }: any) => {
+    const pages = [];
+    let itemsCopy = [...items];
+    if (itemsCopy.length > 0) {
+        pages.push(itemsCopy.splice(0, 5));
+        while (itemsCopy.length > 0) {
+            pages.push(itemsCopy.splice(0, 6));
+        }
+    }
+
+    return (
+        <PDFDocument>
+            {pages.map((pageItems, index) => (
+                <Page key={index} size="A4" style={pdfStyles.page}>
+                    {index === 0 && (
+                        <>
+                            <View style={pdfStyles.headerRow}>
+                                <View style={pdfStyles.headerLeft}>
+                                    <Text style={pdfStyles.yellowHeader}>TEKLİF FORMU</Text>
+                                    <Text style={pdfStyles.firmInfo}>FİRMA ADI: EKOL HOME MOBİLYA TEKSTİL TUR. TİC. LTD. ŞTİ.</Text>
+                                    <Link style={pdfStyles.linkText} src="mailto:ekolkoltuktasarim@hotmail.com">E-MAİL: ekolkoltuktasarim@hotmail.com</Link>
+                                    <Link style={pdfStyles.linkText} src="tel:+905465434242">TEL: +90 546 543 42 42</Link>
+                                    <Text style={pdfStyles.linkText}>ADRES: YUKARI PAZARCI MAH. MİMAR SİNAN CAD. NO:5/1 MANAVGAT/ANTALYA</Text>
+                                </View>
+                                {logo && (
+                                    <View style={pdfStyles.logoContainer}>
+                                        <PDFImage src={logo} style={pdfStyles.logo} />
+                                    </View>
+                                )}
+                            </View>
+                            <View style={pdfStyles.clientSection}>
+                                <Text style={pdfStyles.infoLine}>MÜŞTERİ: {clientName.toUpperCase()}</Text>
+                                <Text style={pdfStyles.infoLine}>KONU: {topic.toUpperCase()}</Text>
+                                <Text style={pdfStyles.infoLine}>TARİH: {new Date(date).toLocaleDateString('tr-TR')}</Text>
+                            </View>
+                        </>
+                    )}
+
+                    <View style={pdfStyles.table}>
+                        <View style={[pdfStyles.tableRow, pdfStyles.tableHeader]}>
+                            <View style={[pdfStyles.cell, pdfStyles.colImg]}><Text style={pdfStyles.cellHeader}>Ürün</Text></View>
+                            <View style={[pdfStyles.cell, pdfStyles.colDesc]}><Text style={pdfStyles.cellHeader}>Açıklama</Text></View>
+                            <View style={[pdfStyles.cell, pdfStyles.colQty]}><Text style={pdfStyles.cellHeader}>Miktar</Text></View>
+                            <View style={[pdfStyles.cell, pdfStyles.colPrice]}><Text style={pdfStyles.cellHeader}>Fiyat</Text></View>
+                            <View style={[pdfStyles.cell, pdfStyles.colTotal]}><Text style={pdfStyles.cellHeader}>Tutar</Text></View>
+                        </View>
+                        {pageItems.map((item, i) => (
+                            <View key={i} style={pdfStyles.tableRow}>
+                                <View style={[pdfStyles.cell, pdfStyles.colImg]}>
+                                    {item.image && (
+                                        <View style={pdfStyles.imageWrapper}>
+                                            <PDFImage src={item.image} style={pdfStyles.image} />
+                                        </View>
+                                    )}
+                                </View>
+                                <View style={[pdfStyles.cell, pdfStyles.colDesc]}>
+                                    <Text style={pdfStyles.cellDesc}>{item.description}</Text>
+                                </View>
+                                <View style={[pdfStyles.cell, pdfStyles.colQty]}><Text>{item.quantity}</Text></View>
+                                <View style={[pdfStyles.cell, pdfStyles.colPrice]}><Text>{item.unitPrice.toLocaleString('tr-TR')} TL</Text></View>
+                                <View style={[pdfStyles.cell, pdfStyles.colTotal]}><Text>{(item.quantity * item.unitPrice).toLocaleString('tr-TR')} TL</Text></View>
+                            </View>
+                        ))}
+                    </View>
+
+                    {index === pages.length - 1 && (
+                        <View style={pdfStyles.footer}>
+                            <Text style={pdfStyles.warning}>NOT: FİYATLARIMIZA KDV DAHİL DEĞİLDİR!!</Text>
+                            <View style={pdfStyles.totalBox}>
+                                <Text style={{ fontSize: 8, textAlign: 'center', marginBottom: 5 }}>TOPLAM TUTAR</Text>
+                                <Text style={pdfStyles.totalAmount}>{total.toLocaleString('tr-TR')} TL</Text>
+                            </View>
+                        </View>
+                    )}
+                </Page>
+            ))}
+        </PDFDocument>
+    );
+};
+
+export default function AdminTeklifOlustur() {
+    const [items, setItems] = useState<any[]>([{ id: Date.now(), description: "", quantity: 1, unitPrice: 0, image: null }]);
+    const [clientName, setClientName] = useState("");
+    const [topic, setTopic] = useState("");
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [logo, setLogo] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadDefaultLogo = async () => {
+            try {
+                const response = await fetch('/logo.png');
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => setLogo(reader.result as string);
+                reader.readAsDataURL(blob);
+            } catch (error) {
+                console.log("Logo yüklenmedi");
+            }
+        };
+        loadDefaultLogo();
+    }, []);
+
+    const handleLogoChange = (file: File) => {
+        const reader = new FileReader();
+        reader.onloadend = () => setLogo(reader.result as string);
+        if (file) reader.readAsDataURL(file);
+    };
+
+    const addRow = () => setItems([...items, { id: Date.now(), description: "", quantity: 1, unitPrice: 0, image: null }]);
+    const removeRow = (id: number) => items.length > 1 && setItems(items.filter(i => i.id !== id));
+    const updateItem = (id: number, field: string, value: any) => setItems(items.map(i => i.id === id ? { ...i, [field]: value } : i));
+
+    const handleImageChange = (id: number, file: File) => {
+        const reader = new FileReader();
+        reader.onloadend = () => updateItem(id, "image", reader.result);
+        if (file) reader.readAsDataURL(file);
+    };
+
+    const toplamTutar = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+
+    const downloadPDF = async () => {
+        const blob = await pdf(<TeklifPDF items={items} clientName={clientName} total={toplamTutar} topic={topic} date={date} logo={logo} />).toBlob();
+        saveAs(blob, `Teklif_${clientName || 'Ekol_Home'}.pdf`);
+    };
+
+    const exportToWord = async () => {
+        const tableRows = items.map(item => new TableRow({
+            children: [
+                new TableCell({
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                    children: item.image ? [new Paragraph({
+                        children: [new ImageRun({
+                            data: item.image.split(',')[1],
+                            transformation: { width: 80, height: 80 },
+                            type: 'png'
+                        })],
+                        alignment: AlignmentType.CENTER
+                    })] : [],
+                    verticalAlign: VerticalAlign.CENTER
+                }),
+                new TableCell({
+                    width: { size: 45, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: item.description || "", size: 18 })],
+                        alignment: AlignmentType.LEFT
+                    })],
+                    verticalAlign: VerticalAlign.CENTER,
+                    margins: { left: 100 }
+                }),
+                new TableCell({
+                    width: { size: 10, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: item.quantity.toString(), size: 20 })],
+                        alignment: AlignmentType.CENTER
+                    })],
+                    verticalAlign: VerticalAlign.CENTER
+                }),
+                new TableCell({
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: `${item.unitPrice.toLocaleString('tr-TR')} TL`, size: 20 })],
+                        alignment: AlignmentType.CENTER
+                    })],
+                    verticalAlign: VerticalAlign.CENTER
+                }),
+                new TableCell({
+                    width: { size: 15, type: WidthType.PERCENTAGE },
+                    children: [new Paragraph({
+                        children: [new TextRun({ text: `${(item.quantity * item.unitPrice).toLocaleString('tr-TR')} TL`, size: 20, bold: true })],
+                        alignment: AlignmentType.CENTER
+                    })],
+                    verticalAlign: VerticalAlign.CENTER
+                }),
+            ],
+        }));
+
+        const doc = new DocxDocument({
+            sections: [{
+                children: [
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        borders: {
+                            top: { style: BorderStyle.NONE },
+                            bottom: { style: BorderStyle.SINGLE, size: 24, color: "EAB308" },
+                            left: { style: BorderStyle.NONE },
+                            right: { style: BorderStyle.NONE },
+                            insideHorizontal: { style: BorderStyle.NONE },
+                            insideVertical: { style: BorderStyle.NONE }
+                        },
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        width: { size: 70, type: WidthType.PERCENTAGE },
+                                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                                        children: [
+                                            new Paragraph({ children: [new TextRun({ text: "TEKLİF FORMU", bold: true, size: 40, color: "EAB308" })] }),
+                                            new Paragraph({ children: [new TextRun({ text: "FİRMA ADI: EKOL HOME MOBİLYA TEKSTİL TUR. TİC. LTD. ŞTİ.", bold: true, size: 18 })] }),
+                                            new Paragraph({ children: [new ExternalHyperlink({ children: [new TextRun({ text: "E-MAİL: ekolkoltuktasarim@hotmail.com", color: "2563EB", size: 16 })], link: "mailto:ekolkoltuktasarim@hotmail.com" })] }),
+                                            new Paragraph({ children: [new ExternalHyperlink({ children: [new TextRun({ text: "TEL: +90 546 543 42 42", color: "2563EB", size: 16 })], link: "tel:+905465434242" })] }),
+                                            new Paragraph({ children: [new TextRun({ text: "ADRES: YUKARI PAZARCI MAH. MİMAR SİNAN CAD. NO:5/1 MANAVGAT/ANTALYA", size: 14 })] }),
+                                        ]
+                                    }),
+                                    new TableCell({
+                                        width: { size: 30, type: WidthType.PERCENTAGE },
+                                        borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                                        children: logo ? [new Paragraph({
+                                            children: [new ImageRun({
+                                                data: logo.split(',')[1],
+                                                transformation: { width: 90, height: 90 },
+                                                type: 'png'
+                                            })],
+                                            alignment: AlignmentType.CENTER
+                                        })] : [],
+                                        verticalAlign: VerticalAlign.CENTER
+                                    })
+                                ]
+                            })
+                        ]
+                    }),
+                    new Paragraph({ text: "", spacing: { before: 200 } }),
+                    new Paragraph({ children: [new TextRun({ text: `MÜŞTERİ: ${clientName.toUpperCase()}`, bold: true, size: 22 })] }),
+                    new Paragraph({ children: [new TextRun({ text: `KONU: ${topic.toUpperCase()}`, size: 20 })] }),
+                    new Paragraph({ children: [new TextRun({ text: `TARİH: ${new Date(date).toLocaleDateString('tr-TR')}`, size: 20 })], spacing: { after: 400 } }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            new TableRow({
+                                children: ["Ürün", "Açıklama", "Miktar", "Fiyat", "Tutar"].map(h => new TableCell({
+                                    shading: { fill: "EAB308" },
+                                    children: [new Paragraph({
+                                        children: [new TextRun({ text: h, bold: true, color: "000000", size: 20 })],
+                                        alignment: AlignmentType.CENTER
+                                    })],
+                                    verticalAlign: VerticalAlign.CENTER,
+                                    margins: { top: 100, bottom: 100 }
+                                }))
+                            }),
+                            ...tableRows
+                        ],
+                    }),
+                    new Paragraph({ text: "", spacing: { before: 400 } }),
+                    new Paragraph({ children: [new TextRun({ text: `TOPLAM TUTAR: ${toplamTutar.toLocaleString('tr-TR')} TL`, bold: true, size: 32, color: "DC2626" })], alignment: AlignmentType.RIGHT }),
+                    new Paragraph({ children: [new TextRun({ text: "NOT: FİYATLARIMIZA KDV DAHİL DEĞİLDİR!!", bold: true, color: "DC2626", size: 20 })] })
+                ],
+            }],
+        });
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, `Teklif_${clientName || 'Ekol_Home'}.docx`);
+    };
+
+    return (
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#0A0A0A] text-white">
+            <div className="max-w-5xl mx-auto space-y-6">
+                <div className="flex justify-between items-center bg-[#121212] p-6 rounded-[2rem] border border-white/5">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-[#EAB308] text-sm font-bold tracking-widest uppercase">Ekol Home Panel</h1>
+                        <label className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 text-[10px] cursor-pointer flex items-center gap-2">
+                            <Image size={14} /> {logo ? "LOGO GÜNCELLE" : "LOGO EKLE"}
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleLogoChange(e.target.files[0])} />
+                        </label>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={exportToWord} className="bg-white/5 hover:bg-white/10 text-[10px] font-bold px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 transition-transform active:scale-95"><FileText size={14} /> WORD</button>
+                        <button onClick={downloadPDF} className="bg-[#EAB308] hover:bg-white text-black text-[10px] font-bold px-4 py-2 rounded-full flex items-center gap-2 transition-transform active:scale-95"><Download size={14} /> PDF</button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-[#121212] p-4 rounded-3xl border border-white/5">
+                        <label className="text-[10px] text-white/40 font-bold uppercase">Müşteri</label>
+                        <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308]" placeholder="Örn: Granada Belek" />
+                    </div>
+                    <div className="bg-[#121212] p-4 rounded-3xl border border-white/5">
+                        <label className="text-[10px] text-white/40 font-bold uppercase">Konu</label>
+                        <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308]" placeholder="Teklif Konusu" />
+                    </div>
+                    <div className="bg-[#121212] p-4 rounded-3xl border border-white/5">
+                        <label className="text-[10px] text-white/40 font-bold uppercase">Tarih</label>
+                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308]" />
+                    </div>
+                </div>
+
+                <div className="bg-[#121212] rounded-[2rem] border border-white/5 overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-white/5 text-[10px] uppercase text-white/40">
+                            <tr>
+                                <th className="p-4 text-left">Görsel</th>
+                                <th className="p-4 text-left">Açıklama</th>
+                                <th className="p-4">Miktar</th>
+                                <th className="p-4">Birim Fiyat</th>
+                                <th className="p-4"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items.map((item) => (
+                                <tr key={item.id} className="border-t border-white/5 group">
+                                    <td className="p-4 w-32">
+                                        <div className="w-20 h-20 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden border border-white/10 relative">
+                                            {item.image ? (
+                                                <>
+                                                    <img src={item.image} className="w-full h-full object-cover" />
+                                                    <button onClick={() => updateItem(item.id, "image", null)} className="absolute top-1 right-1 bg-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={10} /></button>
+                                                </>
+                                            ) : (
+                                                <label className="cursor-pointer opacity-20 hover:opacity-100 flex flex-col items-center gap-1">
+                                                    <Image size={20} />
+                                                    <span className="text-[8px]">Görsel</span>
+                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleImageChange(item.id, e.target.files[0])} />
+                                                </label>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <textarea value={item.description} onChange={(e) => updateItem(item.id, "description", e.target.value)} className="w-full bg-transparent border-none focus:ring-0 text-sm resize-none outline-none" rows={3} placeholder="Ürün detayı..." />
+                                    </td>
+                                    <td className="p-4 w-24">
+                                        <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(item.id, "quantity", Number(e.target.value))} className="w-full bg-white/5 rounded-lg p-2 text-center border border-white/5 outline-none focus:border-[#EAB308]" />
+                                    </td>
+                                    <td className="p-4 w-32">
+                                        <div className="relative">
+                                            <input type="number" min="0" value={item.unitPrice} onChange={(e) => updateItem(item.id, "unitPrice", Number(e.target.value))} className="w-full bg-white/5 rounded-lg p-2 pr-8 text-right border border-white/5 outline-none focus:border-[#EAB308]" />
+                                            <span className="absolute right-2 top-2 text-[10px] text-white/40">TL</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 w-10">
+                                        <button onClick={() => removeRow(item.id)} disabled={items.length === 1} className="text-red-500/50 hover:text-red-500 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"><Trash2 size={16} /></button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 pb-10">
+                    <button onClick={addRow} className="bg-white/5 hover:bg-white/10 px-8 py-4 rounded-full border border-white/10 text-xs font-bold uppercase tracking-widest transition-all active:scale-95"><Plus size={16} className="inline mr-2" /> Yeni Satır Ekle</button>
+                    <div className="bg-[#EAB308] p-6 rounded-[2rem] text-black min-w-[300px] shadow-xl shadow-yellow-500/10">
+                        <div className="flex justify-between items-center font-bold">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase opacity-60">Genel Toplam</span>
+                                <span className="text-[8px] opacity-60">(KDV Hariç)</span>
+                            </div>
+                            <span className="text-3xl tracking-tighter">{toplamTutar.toLocaleString('tr-TR')} TL</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

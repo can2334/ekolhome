@@ -18,7 +18,7 @@ export default function Home() {
     fetch("https://ekolhome.smusa9883x.workers.dev/api/services")
       .then(res => res.json())
       .then(data => {
-        setServices(data.slice(0, 6)); // İlk 6 hizmeti göster
+        setServices(data.slice(0, 3)); // İlk 6 hizmeti göster
         setLoading(false);
       })
       .catch(err => {

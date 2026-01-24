@@ -4,18 +4,21 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { X, Download } from "lucide-react";
 
+// --- TypeScript Hatalarını Gideren Bölüm ---
 declare global {
     interface Window {
         $: any;
         jQuery: any;
     }
 }
+// ------------------------------------------
 
 export default function KatalogSayfasi() {
     const router = useRouter();
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [isMounted, setIsMounted] = useState(false);
     const flipbookRef = useRef<HTMLDivElement>(null);
+    const bookInstance = useRef<any>(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -27,13 +30,20 @@ export default function KatalogSayfasi() {
             } catch (err) { console.error("Hata:", err); }
         };
         fetchKatalog();
+
+        return () => {
+            if (bookInstance.current && bookInstance.current.dispose) {
+                bookInstance.current.dispose();
+            }
+        };
     }, []);
 
     useEffect(() => {
-        if (!isMounted || !pdfUrl) return;
+        if (!isMounted || !pdfUrl || !flipbookRef.current) return;
 
         const loadScripts = async () => {
-            if (!window.jQuery) {
+            // jQuery kontrolü ve yüklemesi
+            if (!(window as any).jQuery) {
                 const jq = document.createElement("script");
                 jq.src = "https://code.jquery.com/jquery-3.6.0.min.js";
                 jq.async = false;
@@ -41,32 +51,34 @@ export default function KatalogSayfasi() {
                 await new Promise((resolve) => (jq.onload = resolve));
             }
 
-            const df = document.createElement("script");
-            df.src = "/dflip/js/dflip.min.js";
-            df.async = false;
-            document.head.appendChild(df);
+            // dFlip kontrolü ve yüklemesi
+            if (!(window as any).jQuery.fn.flipBook) {
+                const df = document.createElement("script");
+                df.src = "/dflip/js/dflip.min.js";
+                df.async = false;
+                document.head.appendChild(df);
+                await new Promise((resolve) => (df.onload = resolve));
+            }
 
-            df.onload = () => {
+            // Başlatma
+            if ((window as any).jQuery && flipbookRef.current) {
                 setTimeout(() => {
-                    if (window.jQuery && flipbookRef.current) {
-                        window.jQuery(flipbookRef.current).flipBook(pdfUrl, {
+                    if (flipbookRef.current) {
+                        // Burada jQuery'yi tip güvenli çağırmak için (window as any) kullanıyoruz
+                        bookInstance.current = (window as any).jQuery(flipbookRef.current).flipBook(pdfUrl, {
                             mode: 'fb',
                             layout: 3,
                             forceFit: true,
                             autoSize: true,
-                            height: "auto",
                             theme: "light",
                             webWorkerPath: '/dflip/js/libs/pdf.worker.min.js',
                             controls: "all",
-                            hideControls: "none",
-                            mobileLayout: 1,
-                            paddingTop: 10,
-                            paddingBottom: 10
                         });
                     }
-                }, 300);
-            };
+                }, 500);
+            }
         };
+
         loadScripts();
     }, [isMounted, pdfUrl]);
 
@@ -77,7 +89,6 @@ export default function KatalogSayfasi() {
             <link rel="stylesheet" href="/dflip/css/dflip.min.css" />
             <link rel="stylesheet" href="/dflip/css/themify-icons.min.css" />
 
-            {/* Float (Yüzen) Butonlar: Header yerine PDF'in üzerine binen şeffaf butonlar */}
             <div className="absolute top-4 left-4 z-[10001] flex gap-2">
                 <button
                     onClick={() => router.push('/')}
@@ -97,7 +108,6 @@ export default function KatalogSayfasi() {
                 </a>
             </div>
 
-            {/* Ana Alan: Tam ekran, header payı yok */}
             <main className="w-full h-full flex items-center justify-center p-0 sm:p-4 md:p-8">
                 <div className="w-full h-full max-w-6xl flex items-center justify-center relative">
                     {!pdfUrl ? (
@@ -121,7 +131,6 @@ export default function KatalogSayfasi() {
                     bottom: 0 !important;
                     height: 50px !important;
                 }
-                /* Mobilde PDF'in tam görünmesi için dFlip içindeki boşlukları sıfırlıyoruz */
                 .df-book-wrapper { padding: 5px 0 !important; }
                 .df-ui-btn { color: #333 !important; }
                 @media (max-width: 768px) {

@@ -26,22 +26,28 @@ export default function AdminHizmetler() {
         content: "",
         cover_image: "",
         extra_images: "",
-        category: "Mobilya",
+        category: "",
         status: "active"
     });
+
+    // Token'ı hem useEffect hem de fonksiyonlarda kullanabilmek için
+    const getAuthToken = () => localStorage.getItem("admin_token");
 
     const fetchHizmetler = async () => {
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
             setHizmetler(Array.isArray(data) ? data : []);
-        } catch (error) { console.error(error); }
+        } catch (error) { console.error("Veri çekme hatası:", error); }
     };
 
     useEffect(() => {
-        const token = localStorage.getItem("admin_token");
-        if (!token) router.push("/admin");
-        fetchHizmetler();
+        const token = getAuthToken();
+        if (!token) {
+            router.push("/admin");
+        } else {
+            fetchHizmetler();
+        }
     }, [router]);
 
     const handleFileUpload = async (file: File) => {
@@ -55,7 +61,14 @@ export default function AdminHizmetler() {
         formData.append("folder", form.slug);
 
         try {
-            const res = await fetch("/api/upload", { method: "POST", body: formData });
+            const token = getAuthToken();
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "Authorization": `Bearer ${token}` // Upload API'si de korumalıysa
+                }
+            });
             const data = await res.json();
             setIsUploading(false);
             return data.url;
@@ -69,32 +82,64 @@ export default function AdminHizmetler() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+
+        const token = getAuthToken(); // Token'ı al
+
         try {
             const res = await fetch(`${API_URL}/save`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` // İSTEDİĞİN KRİTİK EKLEME BURADA
+                },
                 body: JSON.stringify(form),
             });
+
             if (res.ok) {
                 setIsModalOpen(false);
                 resetForm();
                 fetchHizmetler();
+            } else {
+                const errData = await res.json();
+                alert(`Hata: ${errData.message || "Kaydedilemedi"}`);
             }
-        } catch (err) { alert("Hata oluştu!"); }
+        } catch (err) {
+            alert("Sunucuyla bağlantı kurulamadı!");
+        }
         setLoading(false);
     };
 
     const handleDelete = async (id: number) => {
         if (!confirm("Emin misiniz?")) return;
-        await fetch(`${API_URL}/delete`, {
-            method: "POST",
-            body: JSON.stringify({ id }),
-        });
-        fetchHizmetler();
+        const token = getAuthToken();
+
+        try {
+            await fetch(`${API_URL}/delete`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` // Silme işlemi için de gerekli
+                },
+                body: JSON.stringify({ id }),
+            });
+            fetchHizmetler();
+        } catch (error) {
+            alert("Silme işlemi başarısız.");
+        }
     };
 
     const resetForm = () => {
-        setForm({ id: null, title: "", slug: "", description: "", content: "", cover_image: "", extra_images: "", category: "Mobilya", status: "active" });
+        setForm({
+            id: null,
+            title: "",
+            slug: "",
+            description: "",
+            content: "",
+            cover_image: "",
+            extra_images: "",
+            category: "",
+            status: "active"
+        });
     };
 
     const updateTitle = (val: string) => {
@@ -121,8 +166,8 @@ export default function AdminHizmetler() {
                             </p>
                         </div>
 
-                        {/* Yeni Ekle Butonunu Buraya Taşıdım - Mobilde Görünmesi İçin */}
                         <button
+                            type="button" // Formu tetiklememesi için
                             onClick={() => { resetForm(); setIsModalOpen(true); }}
                             className="bg-[#d9a066] text-black text-[10px] font-bold px-4 py-2 rounded-full uppercase tracking-widest hover:bg-white transition-all flex items-center gap-2"
                         >
@@ -134,12 +179,6 @@ export default function AdminHizmetler() {
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <div className="grid grid-cols-1 gap-3 pb-24">
-                        <button
-                            onClick={() => { resetForm(); setIsModalOpen(true); }}
-                            className="bg-[#d9a066] text-black text-[10px] font-bold px-4 py-2.5 rounded-full uppercase tracking-widest hover:bg-white transition-all flex items-center gap-2 shadow-lg shadow-[#d9a066]/10"
-                        >
-                            <Plus size={14} /> <span>Yeni Ekle</span>
-                        </button>
                         {hizmetler.map((item) => (
                             <div key={item.id} className="bg-[#121212] border border-white/5 p-3 md:p-4 rounded-2xl flex items-center gap-3 md:gap-4 hover:border-[#d9a066]/40 transition-all group">
                                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden bg-white/5 shrink-0 border border-white/10">
@@ -173,12 +212,10 @@ export default function AdminHizmetler() {
                 </div>
             </main>
 
-            {/* MODAL - Mobilde ekranı tam kaplayan ve scroll olan yapı */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/95 backdrop-blur-md">
                     <div className="bg-[#0F0F0F] w-full max-w-4xl h-[100dvh] md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col md:rounded-[2.5rem] border-t md:border border-white/10">
 
-                        {/* Modal Header */}
                         <div className="p-5 md:p-8 border-b border-white/5 flex items-center justify-between shrink-0">
                             <div>
                                 <h2 className="text-[#d9a066] text-xs font-bold uppercase tracking-[0.2em]">{form.id ? "Düzenle" : "Yeni Kayıt"}</h2>
@@ -189,11 +226,9 @@ export default function AdminHizmetler() {
                             </button>
                         </div>
 
-                        {/* Modal İçerik - Scroll Buraya Verildi */}
                         <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 md:p-10 space-y-6 md:space-y-8 pb-32 md:pb-10">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
 
-                                {/* Sol Kolon */}
                                 <div className="space-y-5">
                                     <div className="space-y-2">
                                         <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Başlık</label>
@@ -215,19 +250,29 @@ export default function AdminHizmetler() {
                                             className="w-full bg-black/40 border border-white/5 p-4 rounded-2xl text-xs font-mono text-white/30 cursor-not-allowed"
                                         />
                                     </div>
-
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">
+                                            Kısa Açıklama
+                                        </label>
+                                        <textarea
+                                            value={form.description}
+                                            onChange={e => setForm({ ...form, description: e.target.value })}
+                                            className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl h-24 resize-none outline-none focus:border-[#d9a066] transition-all text-sm"
+                                            placeholder="Arama sonuçlarında görünecek kısa özet..."
+                                            required
+                                        />
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Kategori</label>
-                                            <select
+                                            <input
+                                                type="text"
                                                 value={form.category}
                                                 onChange={e => setForm({ ...form, category: e.target.value })}
-                                                className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl text-xs outline-none appearance-none"
-                                            >
-                                                <option value="Mobilya">Mobilya</option>
-                                                <option value="İç Mimari">İç Mimari</option>
-                                                <option value="Tasarım">Tasarım</option>
-                                            </select>
+                                                placeholder="Kategori yazın..."
+                                                className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl text-xs outline-none focus:border-[#d9a066] transition-all"
+                                                required
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Durum</label>
@@ -236,14 +281,13 @@ export default function AdminHizmetler() {
                                                 onChange={e => setForm({ ...form, status: e.target.value })}
                                                 className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl text-xs outline-none"
                                             >
-                                                <option value="active">Yayında</option>
-                                                <option value="passive">Gizli</option>
+                                                <option value="active" className="bg-[#0F0F0F]">Yayında</option>
+                                                <option value="passive" className="bg-[#0F0F0F]">Gizli</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Sağ Kolon */}
                                 <div className="space-y-5">
                                     <div className="space-y-2">
                                         <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Kapak Görseli</label>
@@ -307,7 +351,6 @@ export default function AdminHizmetler() {
                                 />
                             </div>
 
-                            {/* Mobilde altta sabit kalan kaydet butonu (isteğe bağlı) veya form sonu butonu */}
                             <div className="pt-6">
                                 <button
                                     type="submit"
@@ -323,7 +366,6 @@ export default function AdminHizmetler() {
                 </div>
             )}
 
-            {/* Arka Plan Süsü (Opsiyonel) */}
             <div className="fixed -bottom-24 -right-24 w-96 h-96 bg-[#d9a066]/5 blur-[120px] rounded-full -z-10 pointer-events-none"></div>
         </div>
     );

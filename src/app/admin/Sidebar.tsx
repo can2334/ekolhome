@@ -32,6 +32,7 @@ export default function Sidebar() {
         { name: "Referanslar", icon: <ImageIcon size={18} />, href: "/admin/dashboard/referanslar" },
         { name: "İletişim", icon: <Phone size={18} />, href: "/admin/dashboard/iletisim" },
         { name: "hizmetlerimiz", icon: <Phone size={18} />, href: "/admin/dashboard/hizmetlerimiz" },
+        { name: "teklif", icon: <Phone size={18} />, href: "/admin/dashboard/teklif" },
         { name: "Ayarlar", icon: <Settings size={18} />, href: "/admin/dashboard/settings" },
     ];
 

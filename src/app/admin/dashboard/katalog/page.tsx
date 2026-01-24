@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // Router eklendi
 import Sidebar from "../../Sidebar";
-import { Trash2, FileText, Loader2, UploadCloud, RefreshCw } from "lucide-react";
+import { Trash2, FileText, Loader2, UploadCloud, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface KatalogItem {
     id: number;
@@ -14,6 +15,7 @@ interface KatalogItem {
 const API_URL = "https://ekolhome.smusa9883x.workers.dev/api/catalog";
 
 export default function AdminKatalog() {
+    const router = useRouter();
     const [katalog, setKatalog] = useState<KatalogItem | null>(null);
     const [title, setTitle] = useState("");
     const [season, setSeason] = useState("");
@@ -21,12 +23,14 @@ export default function AdminKatalog() {
     const [uploading, setUploading] = useState({ active: false, percent: 0 });
     const [pdfFile, setPdfFile] = useState<File | null>(null);
 
+    // Yardımcı: Token Al
+    const getAuthToken = () => localStorage.getItem("admin_token");
+
     const fetchKatalog = async () => {
         setLoading(true);
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
-            // Liste gelse bile biz ilkini (tek olanı) alıyoruz
             if (data && data.length > 0) {
                 setKatalog(data[0]);
                 setTitle(data[0].title);
@@ -39,122 +43,206 @@ export default function AdminKatalog() {
         }
     };
 
-    useEffect(() => { fetchKatalog(); }, []);
+    // Oturum Kontrolü
+    useEffect(() => {
+        const token = getAuthToken();
+        if (!token) {
+            router.push("/admin");
+        } else {
+            fetchKatalog();
+        }
+    }, [router]);
 
     const uploadFile = async (file: File) => {
+        const token = getAuthToken();
         const formData = new FormData();
         formData.append("file", file);
-        const res = await fetch("/api/upload", { method: "POST", body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error("Dosya yükleme hatası");
-        return data.filePath.startsWith('/') ? data.filePath : `/${data.filePath}`;
-    };
 
+        const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || "Dosya yükleme hatası");
+
+        // 🔥 KRİTİK DÜZELTME BURASI:
+        // data.filePath var mı diye kontrol ediyoruz. Yoksa data.url veya boş string bakıyoruz.
+        const path = data.filePath || data.url || "";
+
+        if (!path) {
+            throw new Error("Sunucudan dosya yolu dönmedi. API'yi kontrol edin.");
+        }
+
+        return path.startsWith('/') ? path : `/${path}`;
+    };
     const handleSave = async () => {
+        const token = getAuthToken();
         if (!title.trim() || (!pdfFile && !katalog?.pdf_url)) {
-            return alert("Lütfen başlık ve PDF dosyasını seçin.");
+            alert("Lütfen başlık ve PDF dosyasını seçin.");
+            return;
         }
 
         setUploading({ active: true, percent: 30 });
 
         try {
             let finalPdfPath = katalog?.pdf_url || "";
-
-            // Eğer yeni bir dosya seçildiyse yükle
             if (pdfFile) {
                 finalPdfPath = await uploadFile(pdfFile);
             }
 
             setUploading({ active: true, percent: 70 });
 
-            // Worker'a gönder (Tek katalog olduğu için hep aynı ID'yi veya endpoint'i kullanıyoruz)
+            // Veritabanındaki yapıya tam uyum için body:
+            const payload = {
+                id: 1, // Görseldeki gibi id her zaman 1 olmalı
+                title: title.trim(),
+                season: season.trim() || "2025/26",
+                pdf_url: finalPdfPath
+            };
+
             const res = await fetch(`${API_URL}/add`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: 1, // Sabit ID
-                    title: title.trim(),
-                    season: season.trim() || "2025",
-                    pdf_url: finalPdfPath
-                })
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
             });
 
-            if (!res.ok) throw new Error("Kaydedilemedi");
+            if (!res.ok) {
+                const errorData = await res.json();
+                // Eğer hala "constraint" hatası alıyorsan, 
+                // bu API'nin INSERT yerine UPDATE yapması gerektiğini gösterir.
+                throw new Error(errorData.message || "Sunucu güncelleme hatası verdi.");
+            }
 
             setUploading({ active: true, percent: 100 });
-            alert("Ana Katalog Güncellendi!");
+            alert("Katalog başarıyla güncellendi!");
+
             setPdfFile(null);
             fetchKatalog();
         } catch (error: any) {
+            // Hata mesajını daha detaylı gösterelim ki sorunu anlayalım
+            console.error("Hata Detayı:", error);
             alert(`Hata: ${error.message}`);
         } finally {
             setUploading({ active: false, percent: 0 });
         }
     };
-
     return (
-        <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col lg:flex-row font-sans">
+        <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col lg:flex-row font-sans relative">
             <Sidebar />
-            <main className="flex-1 p-6 lg:p-12">
+            <main className="flex-1 p-6 lg:p-12 h-screen overflow-y-auto">
                 <div className="flex justify-between items-center mb-10">
                     <div className="flex flex-col">
                         <h1 className="text-[#d9a066] text-xs font-bold tracking-[0.4em] uppercase">ANA KATALOG YÖNETİMİ</h1>
-                        <p className="text-gray-500 text-[10px] mt-1 tracking-widest">Sistemde sadece bir aktif katalog bulunur.</p>
+                        <p className="text-gray-500 text-[10px] mt-1 tracking-widest uppercase">Sistemde sadece bir aktif katalog bulunur.</p>
                     </div>
                 </div>
 
-                {/* Düzenleme Formu */}
-                <section className="bg-[#121212] rounded-[2rem] border border-white/5 p-8 mb-8 relative overflow-hidden">
-                    <h2 className="text-[#d9a066] text-[10px] uppercase tracking-[0.3em] font-bold mb-8 flex items-center gap-2">
-                        <RefreshCw size={12} className={uploading.active ? "animate-spin" : ""} />
-                        KATALOĞU GÜNCELLE
-                    </h2>
+                {loading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <Loader2 className="animate-spin text-[#d9a066]" size={32} />
+                    </div>
+                ) : (
+                    <>
+                        <section className="bg-[#121212] rounded-[2rem] border border-white/5 p-8 mb-8 relative overflow-hidden shadow-2xl">
+                            <h2 className="text-[#d9a066] text-[10px] uppercase tracking-[0.3em] font-bold mb-8 flex items-center gap-2">
+                                <RefreshCw size={12} className={uploading.active ? "animate-spin" : ""} />
+                                KATALOĞU GÜNCELLE
+                            </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-[10px] text-gray-500 ml-2 uppercase tracking-widest">Katalog Adı</label>
-                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Örn: Ekol Home 2025 Koleksiyonu" className="bg-white/[0.03] border border-white/10 p-4 rounded-xl outline-none text-sm text-white focus:border-[#d9a066]/50" />
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <label className="text-[10px] text-gray-500 ml-2 uppercase tracking-widest">Sezon Bilgisi</label>
-                            <input value={season} onChange={e => setSeason(e.target.value)} placeholder="Örn: 2025 Spring" className="bg-white/[0.03] border border-white/10 p-4 rounded-xl outline-none text-sm text-white focus:border-[#d9a066]/50" />
-                        </div>
-
-                        <div className="md:col-span-2">
-                            <label className="text-[10px] text-gray-500 ml-2 mb-2 block uppercase tracking-widest">PDF Dosyası</label>
-                            <label className="flex items-center justify-center gap-3 bg-white/[0.03] border-2 border-dashed border-white/10 p-8 rounded-xl cursor-pointer hover:bg-white/5 hover:border-[#d9a066]/30 transition-all group">
-                                <FileText size={24} className="text-gray-500 group-hover:text-[#d9a066]" />
-                                <div className="flex flex-col">
-                                    <span className="text-xs text-gray-300">{pdfFile ? pdfFile.name : "Yeni PDF seçmek için tıklayın veya sürükleyin"}</span>
-                                    {katalog && !pdfFile && <span className="text-[10px] text-[#d9a066]/60 italic mt-1 flex items-center gap-1">Mevcut dosya: {katalog.pdf_url.split('/').pop()}</span>}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[10px] text-white/40 ml-2 uppercase tracking-widest font-bold">Katalog Adı</label>
+                                    <input
+                                        value={title}
+                                        onChange={e => setTitle(e.target.value)}
+                                        placeholder="Örn: Ekol Home 2025 Koleksiyonu"
+                                        className="bg-white/[0.03] border border-white/10 p-4 rounded-xl outline-none text-sm text-white focus:border-[#d9a066]/50 transition-all"
+                                    />
                                 </div>
-                                <input type="file" accept=".pdf" className="hidden" onChange={e => setPdfFile(e.target.files?.[0] || null)} />
-                            </label>
-                        </div>
 
-                        <button onClick={handleSave} disabled={uploading.active} className="md:col-span-2 bg-[#d9a066] text-black font-bold py-5 rounded-xl text-[10px] tracking-[0.3em] hover:bg-white transition-all disabled:opacity-50 uppercase">
-                            {uploading.active ? "SİSTEM GÜNCELLENİYOR..." : "DEĞİŞİKLİKLERİ KAYDET VE YAYINLA"}
-                        </button>
-                    </div>
-                </section>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-[10px] text-white/40 ml-2 uppercase tracking-widest font-bold">Sezon Bilgisi</label>
+                                    <input
+                                        value={season}
+                                        onChange={e => setSeason(e.target.value)}
+                                        placeholder="Örn: 2025 Spring"
+                                        className="bg-white/[0.03] border border-white/10 p-4 rounded-xl outline-none text-sm text-white focus:border-[#d9a066]/50 transition-all"
+                                    />
+                                </div>
 
-                {/* Mevcut Durum Kartı */}
-                {!loading && katalog && (
-                    <div className="bg-[#d9a066]/5 border border-[#d9a066]/20 p-6 rounded-[1.5rem] flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-[#d9a066] rounded-full flex items-center justify-center text-black">
-                                <FileText size={20} />
+                                <div className="md:col-span-2">
+                                    <label className="text-[10px] text-white/40 ml-2 mb-2 block uppercase tracking-widest font-bold">PDF Dosyası</label>
+                                    <label className="flex items-center justify-center gap-3 bg-white/[0.03] border-2 border-dashed border-white/10 p-10 rounded-2xl cursor-pointer hover:bg-white/5 hover:border-[#d9a066]/30 transition-all group relative overflow-hidden">
+                                        <FileText size={24} className="text-white/20 group-hover:text-[#d9a066] transition-colors" />
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-gray-300">{pdfFile ? pdfFile.name : "Yeni PDF seçmek için tıklayın"}</span>
+                                            {katalog && !pdfFile && (
+                                                <span className="text-[9px] text-[#d9a066]/60 italic mt-1 uppercase tracking-tighter">
+                                                    Mevcut: {katalog.pdf_url.split('/').pop()}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <input type="file" accept=".pdf" className="hidden" onChange={e => setPdfFile(e.target.files?.[0] || null)} />
+
+                                        {uploading.active && (
+                                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <Loader2 className="animate-spin text-[#d9a066]" />
+                                                    <span className="text-[10px] font-bold tracking-widest">%{uploading.percent}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </label>
+                                </div>
+
+                                <button
+                                    onClick={handleSave}
+                                    disabled={uploading.active}
+                                    className="md:col-span-2 bg-[#d9a066] text-black font-extrabold py-5 rounded-2xl text-[11px] tracking-[0.3em] hover:bg-white transition-all disabled:opacity-50 shadow-xl uppercase"
+                                >
+                                    {uploading.active ? "İŞLEM YAPILIYOR..." : "DEĞİŞİKLİKLERİ KAYDET VE YAYINLA"}
+                                </button>
                             </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">{katalog.title}</h3>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-widest">{katalog.season} • Aktif Yayın</p>
+                        </section>
+
+                        {katalog && (
+                            <div className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-[#d9a066]/10 border border-[#d9a066]/20 rounded-2xl flex items-center justify-center text-[#d9a066]">
+                                        <FileText size={20} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-sm font-bold text-white uppercase tracking-wider">{katalog.title}</h3>
+                                            <span className="bg-green-500/10 text-green-500 text-[8px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Aktif</span>
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">{katalog.season} Koleksiyonu</p>
+                                    </div>
+                                </div>
+                                <a
+                                    href={katalog.pdf_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="w-full md:w-auto text-[10px] border border-white/10 px-6 py-3 rounded-xl hover:bg-white hover:text-black transition-all tracking-[0.2em] uppercase font-bold text-center"
+                                >
+                                    Dosyayı Görüntüle
+                                </a>
                             </div>
-                        </div>
-                        <a href={katalog.pdf_url} target="_blank" className="text-[10px] border border-white/10 px-4 py-2 rounded-lg hover:bg-white hover:text-black transition-all tracking-widest uppercase font-bold">Önizle</a>
-                    </div>
+                        )}
+                    </>
                 )}
             </main>
+
+            {/* Dekoratif Arka Plan */}
+            <div className="fixed -bottom-24 -right-24 w-96 h-96 bg-[#d9a066]/5 blur-[120px] rounded-full -z-10 pointer-events-none"></div>
         </div>
     );
 }
