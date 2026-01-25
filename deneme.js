@@ -376,8 +376,10 @@ export default {
             }
 
             /**
-             * 2. KATALOG YÖNETİCİSİ
-             */
+ * 2. KATALOG YÖNETİCİSİ - EKOL HOME MOBİLYA
+ */
+
+            // Katalog Listeleme
             if (method === "GET" && pathname === "/api/catalog") {
                 const { results } = await env.EKOLHOME_DB.prepare(
                     "SELECT * FROM catalog ORDER BY id DESC"
@@ -385,75 +387,67 @@ export default {
                 return new Response(JSON.stringify(results || []), { headers: corsHeaders });
             }
 
-            // Catalog Ekleme / Güncelleme
+            // Katalog Ekleme / Güncelleme (Tek Dosya Üzerinden: EkolHome.pdf)
             if (method === "POST" && pathname === "/api/catalog/add") {
-                const body = await request.json();
-                // Frontend'den gelen season verisini de buraya ekledik
-                const { title, pdf_url, season } = body;
                 try {
-                    // INSERT OR REPLACE veya ON CONFLICT yapısı
+                    const body = await request.json();
+                    // pdf_url gelmiyorsa biz manuel R2 linkini oluşturuyoruz
+                    // Örn: https://pub-xxx.r2.dev/EkolHome.pdf
+                    const { title, season, pdf_url } = body;
+
+                    // Ekol Home için dosya adını sabitleyebiliriz veya gelen URL'yi kullanabiliriz
+                    const finalPdfUrl = pdf_url || `https://assets.ekolhome.com/EkolHome.pdf`;
+
                     await env.EKOLHOME_DB.prepare(`
-      INSERT INTO catalog (id, title, pdf_url, season) 
-      VALUES (1, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET 
-        title = excluded.title, 
-        pdf_url = excluded.pdf_url,
-        season = excluded.season
-    `)
-                        .bind(title, pdf_url, season || "2025")
+            INSERT INTO catalog (id, title, pdf_url, season) 
+            VALUES (1, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET 
+                title = excluded.title, 
+                pdf_url = excluded.pdf_url,
+                season = excluded.season
+        `)
+                        .bind(title || "Ekol Home Güncel Katalog", finalPdfUrl, season || "2026")
                         .run();
 
-                    await logActivity(currentUserId, "UPDATE_CATALOG", clientDetails, null, body);
+                    await logActivity(currentUserId, "UPDATE_CATALOG", clientDetails, null, { title, pdf_url: finalPdfUrl });
 
-                    return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+                    return new Response(JSON.stringify({ success: true, url: finalPdfUrl }), { headers: corsHeaders });
                 } catch (error) {
                     return new Response(
-                        JSON.stringify({ error: "Katalog güncellenemedi: " + error.message }),
+                        JSON.stringify({ error: "Katalog güncellenirken hata oluştu: " + error.message }),
                         { status: 500, headers: corsHeaders }
                     );
                 }
             }
 
-            // Catalog Güncelleme
-            if (method === "POST" && pathname === "/api/catalog/update") {
-                const body = await request.json();
-                const { id, title, pdf_url } = body;
-
-                const oldData = await env.EKOLHOME_DB.prepare(
-                    "SELECT * FROM catalog WHERE id = ?"
-                ).bind(id).first();
-
-                await env.EKOLHOME_DB.prepare(
-                    "UPDATE catalog SET title = ?, pdf_url = ? WHERE id = ?"
-                ).bind(title, pdf_url, id).run();
-
-                await logActivity(currentUserId, "UPDATE_CATALOG", clientDetails, oldData, body);
-
-                return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
-            }
-
-            // Catalog Silme - R2'DEN DE SİL
+            // Katalog Silme (Hem DB hem R2)
             if (method === "POST" && pathname === "/api/catalog/delete") {
-                const { id } = await request.json();
+                try {
+                    const { id } = await request.json();
 
-                // 1. DB'den veriyi al
-                const item = await env.EKOLHOME_DB.prepare(
-                    "SELECT pdf_url FROM catalog WHERE id = ?"
-                ).bind(id).first();
+                    // 1. Önce URL'yi al ki R2'den neyi sileceğimizi bilelim
+                    const item = await env.EKOLHOME_DB.prepare(
+                        "SELECT pdf_url FROM catalog WHERE id = ?"
+                    ).bind(id).first();
 
-                // 2. R2'den dosyayı sil
-                if (item?.pdf_url) {
-                    await deleteFromR2(item.pdf_url);
+                    if (item?.pdf_url) {
+                        // R2'den temizleme (Helper fonksiyonunun tanımlı olduğunu varsayıyoruz)
+                        // Not: deleteFromR2 fonksiyonun dosya yolunu (key) düzgün ayıklamalı
+                        await deleteFromR2(item.pdf_url);
+                    }
+
+                    // 2. DB'den sil
+                    await env.EKOLHOME_DB.prepare("DELETE FROM catalog WHERE id = ?").bind(id).run();
+
+                    await logActivity(currentUserId, "DELETE_CATALOG", clientDetails, item);
+
+                    return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+                } catch (error) {
+                    return new Response(
+                        JSON.stringify({ error: "Silme işlemi başarısız: " + error.message }),
+                        { status: 500, headers: corsHeaders }
+                    );
                 }
-
-                // 3. DB'den kaydı sil
-                await env.EKOLHOME_DB.prepare(
-                    "DELETE FROM catalog WHERE id = ?"
-                ).bind(id).run();
-
-                await logActivity(currentUserId, "DELETE_CATALOG", clientDetails, item);
-
-                return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
             }
 
             /**

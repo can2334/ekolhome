@@ -59,6 +59,7 @@ export default function Home() {
 
         <motion.div style={{ opacity, scale }} className="relative z-10">
           {/* Badge */}
+          <br />
           <div className="overflow-hidden mb-6">
             <motion.div
               initial={{ y: 100, opacity: 0 }}

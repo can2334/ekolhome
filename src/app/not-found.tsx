@@ -1,104 +1,103 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useSpring, useMotionValue } from 'framer-motion';
 import Link from 'next/link';
 
 export default function NotFound() {
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    // Daha akıcı bir hareket için spring animasyonu ekledik
+    const mouseX = useSpring(useMotionValue(0), { stiffness: 50, damping: 20 });
+    const mouseY = useSpring(useMotionValue(0), { stiffness: 50, damping: 20 });
 
     useEffect(() => {
-        // TypeScript hatasını düzelten kısım: e: MouseEvent
         const handleMouseMove = (e: MouseEvent) => {
-            setMousePosition({
-                x: (e.clientX / window.innerWidth - 0.5) * 20,
-                y: (e.clientY / window.innerHeight - 0.5) * 20
-            });
+            mouseX.set((e.clientX / window.innerWidth - 0.5) * 30);
+            mouseY.set((e.clientY / window.innerHeight - 0.5) * 30);
         };
 
         window.addEventListener('mousemove', handleMouseMove);
         return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
-
-
+    }, [mouseX, mouseY]);
 
     return (
-        <main className="h-screen relative overflow-hidden bg-[#FAF9F6]">
-            {/* Animated Background Pattern */}
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-                <div className="absolute inset-0" style={{
-                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 11px)`
-                }} />
-            </div>
+        <main className="h-screen w-full relative overflow-hidden bg-[#FDFDFD] flex items-center justify-center">
+            {/* Arka Plan Deseni - Daha zarif bir doku */}
+            <div className="absolute inset-0 z-0 opacity-[0.02]"
+                style={{ backgroundImage: `radial-gradient(#000 0.5px, transparent 0.5px)`, backgroundSize: '24px 24px' }}
+            />
 
+            {/* İçerik Konteynırı */}
+            <div className="relative z-10 w-full max-w-4xl px-6 flex flex-col items-center">
 
-
-            {/* Main Content */}
-            <div className="h-full flex flex-col items-center justify-center px-6 relative z-10">
-                <div className="text-center space-y-12 max-w-2xl">
-
-                    {/* Parallax 404 Header */}
-                    <div className="relative">
-                        <motion.h1
-                            animate={{
-                                x: mousePosition.x * 0.8,
-                                y: mousePosition.y * 0.8
-                            }}
-                            className="text-[20vw] md:text-[15vw] font-extralight tracking-tighter leading-none text-black/[0.03] select-none"
-                        >
-                            404
-                        </motion.h1>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <motion.div
-                                animate={{ rotate: 45 + (mousePosition.x * 0.5) }}
-                                className="w-32 h-32 md:w-48 md:h-48 border border-black/[0.05]"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Text Content */}
+                {/* 404 Görsel Alanı */}
+                <div className="relative mb-8 md:mb-12">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="space-y-6"
+                        style={{ x: mouseX, y: mouseY }}
+                        className="text-[25vw] md:text-[18vw] font-extralight text-black/[0.04] leading-none select-none italic"
                     >
-                        <h2 className="text-xl md:text-2xl uppercase tracking-[0.5em] font-light text-black">
-                            Sayfa Bulunamadı
-                        </h2>
-                        <p className="text-sm text-gray-500 font-light max-w-md mx-auto leading-relaxed">
-                            Aradığınız sayfanın iplikleri henüz dokunmamış olabilir.
-                            Atölyemizin ana sayfasına dönerek yeni koleksiyonlarımızı keşfedin.
+                        404
+                    </motion.div>
+
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <motion.div
+                            animate={{
+                                rotate: [45, 225, 45],
+                                scale: [1, 1.1, 1]
+                            }}
+                            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                            className="w-24 h-24 md:w-40 md:h-40 border-[0.5px] border-black/10 backdrop-blur-[2px]"
+                        />
+                    </div>
+                </div>
+
+                {/* Yazı Alanı */}
+                <div className="text-center space-y-6 md:space-y-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <h1 className="text-2xl md:text-4xl font-light tracking-[0.3em] uppercase text-neutral-900 mb-4">
+                            Kusursuz Bir Hata
+                        </h1>
+                        <p className="text-xs md:text-sm text-neutral-500 font-light max-w-[280px] md:max-w-md mx-auto leading-relaxed tracking-wide">
+                            Aradığınız sayfa henüz koleksiyonumuza dahil edilmemiş olabilir.
+                            Zarafet dolu ana sayfamıza dönerek yolculuğunuza devam edin.
                         </p>
                     </motion.div>
 
-                    {/* Navigation */}
+                    {/* Butonlar - Mobil uyumlu yapı */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 0.8 }}
-                        className="flex flex-col sm:flex-row gap-8 justify-center items-center pt-4"
+                        transition={{ delay: 0.5 }}
+                        className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4"
                     >
                         <Link
                             href="/"
-                            className="group relative px-12 py-5 bg-black text-white text-[10px] uppercase tracking-[0.3em] overflow-hidden transition-all duration-500"
+                            className="w-full sm:w-auto px-10 py-4 bg-neutral-900 text-white text-[10px] md:text-[11px] uppercase tracking-[0.2em] hover:bg-neutral-800 transition-all duration-300 rounded-full shadow-sm shadow-black/10"
                         >
-                            <span className="relative z-10">Anasayfaya Dön</span>
-                            <div className="absolute inset-0 bg-gray-800 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                            Ana Sayfaya Dön
                         </Link>
 
                         <Link
                             href="/#collections"
-                            className="text-[10px] uppercase tracking-[0.3em] text-gray-400 hover:text-black transition-colors duration-300 border-b border-transparent hover:border-black"
+                            className="group relative text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-neutral-400 hover:text-neutral-900 transition-colors duration-300"
                         >
                             Koleksiyonlar
+                            <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-neutral-900 transition-all duration-300 group-hover:w-full" />
                         </Link>
                     </motion.div>
                 </div>
             </div>
 
-            {/* Decorative Borders */}
-            <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-black/5 to-transparent" />
-            <div className="absolute top-0 right-12 w-px h-full bg-gradient-to-b from-transparent via-black/5 to-transparent" />
+            {/* Kenar Detayları - Tasarımın çerçevesi */}
+            <div className="hidden md:block absolute top-10 left-10 text-[10px] tracking-[0.4em] text-neutral-300 uppercase vertical-text">
+                Atölye No: 404
+            </div>
+            <div className="absolute bottom-10 right-10 flex gap-4 opacity-20">
+                <div className="w-12 h-[1px] bg-black" />
+                <div className="w-4 h-[1px] bg-black" />
+            </div>
         </main>
     );
 }
