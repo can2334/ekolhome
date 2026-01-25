@@ -32,6 +32,7 @@ const Navbar = () => {
     const NAV_LINKS = [
         { name: "Anasayfa", href: "/" },
         { name: "katalog", href: "/katalog" },
+        { name: "Hakkımızda", href: "/hakkimizda" },
         {
             name: "Hizmetlerimiz",
             href: "/hizmetlerimiz",

@@ -5,13 +5,15 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
     LayoutDashboard,
-    ImageIcon,
-    FileText,
+    BookOpen,     // Kataloglar için
+    Image as ImageIcon,
+    MessageSquare, // İletişim için
+    Briefcase,    // Hizmetlerimiz için
+    Handshake,    // Teklif için (Alternatif: FileSpreadsheet)
     Settings,
-    LogOut,
-    Phone,
+    X,
     Menu,
-    X
+    LogOut
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -26,14 +28,46 @@ export default function Sidebar() {
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
+
+
+    // ... bileşen içi ...
+
     const sidebarItems = [
-        { name: "Genel Bakış", icon: <LayoutDashboard size={18} />, href: "/admin/dashboard" },
-        { name: "Kataloglar", icon: <FileText size={18} />, href: "/admin/dashboard/katalog" },
-        { name: "Referanslar", icon: <ImageIcon size={18} />, href: "/admin/dashboard/referanslar" },
-        { name: "İletişim", icon: <Phone size={18} />, href: "/admin/dashboard/iletisim" },
-        { name: "hizmetlerimiz", icon: <Phone size={18} />, href: "/admin/dashboard/hizmetlerimiz" },
-        { name: "teklif", icon: <Phone size={18} />, href: "/admin/dashboard/teklif" },
-        { name: "Ayarlar", icon: <Settings size={18} />, href: "/admin/dashboard/settings" },
+        {
+            name: "Genel Bakış",
+            icon: <LayoutDashboard size={18} />,
+            href: "/admin/dashboard"
+        },
+        {
+            name: "Kataloglar",
+            icon: <BookOpen size={18} />,
+            href: "/admin/dashboard/katalog"
+        },
+        {
+            name: "Referanslar",
+            icon: <ImageIcon size={18} />,
+            href: "/admin/dashboard/referanslar"
+        },
+        {
+            name: "Hizmetlerimiz",
+            icon: <Briefcase size={18} />,
+            href: "/admin/dashboard/hizmetlerimiz"
+        },
+        {
+            name: "İletişim",
+            icon: <MessageSquare size={18} />,
+            href: "/admin/dashboard/iletisim"
+        },
+        {
+            name: "Teklif Oluştur",
+            icon: <Handshake size={18} />,
+            href: "/admin/dashboard/teklif"
+        },
+        {
+            name: "Ayarlar",
+            icon: <Settings size={18} />,
+            href: "/admin/dashboard/settings"
+        },
     ];
 
     return (

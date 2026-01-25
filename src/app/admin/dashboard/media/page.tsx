@@ -6,7 +6,6 @@ import {
     Grid, List, X, RefreshCw, FileText, Folder, ChevronLeft
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Sidebar from "../../Sidebar";
 
 export default function MediaPanel() {
     const [allFiles, setAllFiles] = useState<any[]>([]);
@@ -86,7 +85,6 @@ export default function MediaPanel() {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col md:flex-row font-sans uppercase tracking-tight">
-            <Sidebar />
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
                 {/* Header */}
                 <header className="sticky top-0 z-40 bg-black/60 backdrop-blur-2xl border-b border-white/5 shrink-0 px-6 py-4 flex items-center justify-between">

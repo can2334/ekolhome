@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, FileText, Download, Image } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Trash2, FileText, Download, Image as ImageIcon } from "lucide-react";
 // @ts-ignore
 import { saveAs } from "file-saver";
 import {
@@ -31,7 +32,7 @@ import {
     Link
 } from "@react-pdf/renderer";
 
-// Font Kaydı
+// Font Kaydı - Türkçe karakter desteği için önemlidir
 Font.register({
     family: 'Roboto',
     fonts: [
@@ -70,6 +71,7 @@ const pdfStyles = StyleSheet.create({
     totalAmount: { color: '#DC2626', fontSize: 16, fontWeight: 'bold', textAlign: 'center' }
 });
 
+// PDF Bileşeni
 const TeklifPDF = ({ items, clientName, total, topic, date, logo }: any) => {
     const pages = [];
     let itemsCopy = [...items];
@@ -101,8 +103,8 @@ const TeklifPDF = ({ items, clientName, total, topic, date, logo }: any) => {
                                 )}
                             </View>
                             <View style={pdfStyles.clientSection}>
-                                <Text style={pdfStyles.infoLine}>MÜŞTERİ: {clientName.toUpperCase()}</Text>
-                                <Text style={pdfStyles.infoLine}>KONU: {topic.toUpperCase()}</Text>
+                                <Text style={pdfStyles.infoLine}>MÜŞTERİ: {(clientName || "").toUpperCase()}</Text>
+                                <Text style={pdfStyles.infoLine}>KONU: {(topic || "").toUpperCase()}</Text>
                                 <Text style={pdfStyles.infoLine}>TARİH: {new Date(date).toLocaleDateString('tr-TR')}</Text>
                             </View>
                         </>
@@ -129,8 +131,8 @@ const TeklifPDF = ({ items, clientName, total, topic, date, logo }: any) => {
                                     <Text style={pdfStyles.cellDesc}>{item.description}</Text>
                                 </View>
                                 <View style={[pdfStyles.cell, pdfStyles.colQty]}><Text>{item.quantity}</Text></View>
-                                <View style={[pdfStyles.cell, pdfStyles.colPrice]}><Text>{item.unitPrice.toLocaleString('tr-TR')} TL</Text></View>
-                                <View style={[pdfStyles.cell, pdfStyles.colTotal]}><Text>{(item.quantity * item.unitPrice).toLocaleString('tr-TR')} TL</Text></View>
+                                <View style={[pdfStyles.cell, pdfStyles.colPrice]}><Text>{(item.unitPrice || 0).toLocaleString('tr-TR')} TL</Text></View>
+                                <View style={[pdfStyles.cell, pdfStyles.colTotal]}><Text>{((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString('tr-TR')} TL</Text></View>
                             </View>
                         ))}
                     </View>
@@ -151,26 +153,90 @@ const TeklifPDF = ({ items, clientName, total, topic, date, logo }: any) => {
 };
 
 export default function AdminTeklifOlustur() {
+    const router = useRouter();
     const [items, setItems] = useState<any[]>([{ id: Date.now(), description: "", quantity: 1, unitPrice: 0, image: null }]);
     const [clientName, setClientName] = useState("");
     const [topic, setTopic] = useState("");
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [logo, setLogo] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+    // TOKEN KONTROLÜ - Sayfa yüklendiğinde
     useEffect(() => {
+        const checkAuth = () => {
+            const token = localStorage.getItem("admin_token");
+
+            if (!token) {
+                alert("Oturum bulunamadı. Lütfen giriş yapın.");
+                router.push("/admin/login");
+                return;
+            }
+
+            setIsAuthenticated(true);
+        };
+
+        checkAuth();
+    }, [router]);
+
+    // Varsayılan logoyu yükle
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
         const loadDefaultLogo = async () => {
             try {
                 const response = await fetch('/logo.png');
-                const blob = await response.blob();
-                const reader = new FileReader();
-                reader.onloadend = () => setLogo(reader.result as string);
-                reader.readAsDataURL(blob);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    reader.onloadend = () => setLogo(reader.result as string);
+                    reader.readAsDataURL(blob);
+                }
             } catch (error) {
-                console.log("Logo yüklenmedi");
+                console.log("Logo yüklenemedi, manuel yükleme beklenecek.");
             }
         };
         loadDefaultLogo();
-    }, []);
+    }, [isAuthenticated]);
+
+    // LOGOUT FONKSİYONU - 401 durumunda kullanılacak
+    const handleLogout = () => {
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_user");
+        alert("Oturum süresi doldu. Lütfen tekrar giriş yapın.");
+        router.push("/admin/login");
+    };
+
+    // GÜVENLİ API İSTEĞİ - 401 kontrolü ile
+    const secureApiRequest = async (endpoint: string, options: RequestInit = {}) => {
+        const token = localStorage.getItem("admin_token");
+
+        if (!token) {
+            handleLogout();
+            throw new Error("Token bulunamadı");
+        }
+
+        try {
+            const response = await fetch(endpoint, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            // 401 Yetkisiz erişim - Otomatik logout
+            if (response.status === 401) {
+                handleLogout();
+                throw new Error("Oturum süresi doldu");
+            }
+
+            return response;
+        } catch (error) {
+            console.error("API isteği hatası:", error);
+            throw error;
+        }
+    };
 
     const handleLogoChange = (file: File) => {
         const reader = new FileReader();
@@ -321,98 +387,138 @@ export default function AdminTeklifOlustur() {
         saveAs(blob, `Teklif_${clientName || 'Ekol_Home'}.docx`);
     };
 
+    // Token yoksa loading göster
+    if (!isAuthenticated) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-[#0A0A0A] text-white">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#EAB308] mx-auto mb-4"></div>
+                    <p className="text-sm text-white/40">Yetkilendiriliyor...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#0A0A0A] text-white">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#0A0A0A] text-white min-h-screen font-sans">
             <div className="max-w-5xl mx-auto space-y-6">
-                <div className="flex justify-between items-center bg-[#121212] p-6 rounded-[2rem] border border-white/5">
+                {/* Header / Actions */}
+                <div className="flex flex-wrap justify-between items-center bg-[#121212] p-6 rounded-[2rem] border border-white/5 gap-4">
                     <div className="flex items-center gap-4">
                         <h1 className="text-[#EAB308] text-sm font-bold tracking-widest uppercase">Ekol Home Panel</h1>
-                        <label className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 text-[10px] cursor-pointer flex items-center gap-2">
-                            <Image size={14} /> {logo ? "LOGO GÜNCELLE" : "LOGO EKLE"}
+                        <label className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 text-[10px] cursor-pointer flex items-center gap-2 transition-colors">
+                            <ImageIcon size={14} /> {logo ? "LOGO GÜNCELLE" : "LOGO EKLE"}
                             <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleLogoChange(e.target.files[0])} />
                         </label>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={exportToWord} className="bg-white/5 hover:bg-white/10 text-[10px] font-bold px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 transition-transform active:scale-95"><FileText size={14} /> WORD</button>
-                        <button onClick={downloadPDF} className="bg-[#EAB308] hover:bg-white text-black text-[10px] font-bold px-4 py-2 rounded-full flex items-center gap-2 transition-transform active:scale-95"><Download size={14} /> PDF</button>
+                        <button onClick={exportToWord} className="bg-white/5 hover:bg-white/10 text-[10px] font-bold px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 transition-all active:scale-95">
+                            <FileText size={14} /> WORD
+                        </button>
+                        <button onClick={downloadPDF} className="bg-[#EAB308] hover:bg-white text-black text-[10px] font-bold px-4 py-2 rounded-full flex items-center gap-2 transition-all active:scale-95">
+                            <Download size={14} /> PDF
+                        </button>
                     </div>
                 </div>
 
+                {/* Info Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-[#121212] p-4 rounded-3xl border border-white/5">
-                        <label className="text-[10px] text-white/40 font-bold uppercase">Müşteri</label>
-                        <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308]" placeholder="Örn: Granada Belek" />
+                        <label className="text-[10px] text-white/40 font-bold uppercase block mb-1">Müşteri</label>
+                        <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308] transition-colors" placeholder="Örn: Granada Belek" />
                     </div>
                     <div className="bg-[#121212] p-4 rounded-3xl border border-white/5">
-                        <label className="text-[10px] text-white/40 font-bold uppercase">Konu</label>
-                        <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308]" placeholder="Teklif Konusu" />
+                        <label className="text-[10px] text-white/40 font-bold uppercase block mb-1">Konu</label>
+                        <input type="text" value={topic} onChange={(e) => setTopic(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308] transition-colors" placeholder="Teklif Konusu" />
                     </div>
                     <div className="bg-[#121212] p-4 rounded-3xl border border-white/5">
-                        <label className="text-[10px] text-white/40 font-bold uppercase">Tarih</label>
-                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308]" />
+                        <label className="text-[10px] text-white/40 font-bold uppercase block mb-1">Tarih</label>
+                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-transparent border-b border-white/10 p-2 outline-none focus:border-[#EAB308] transition-colors text-white" />
                     </div>
                 </div>
 
-                <div className="bg-[#121212] rounded-[2rem] border border-white/5 overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-white/5 text-[10px] uppercase text-white/40">
-                            <tr>
-                                <th className="p-4 text-left">Görsel</th>
-                                <th className="p-4 text-left">Açıklama</th>
-                                <th className="p-4">Miktar</th>
-                                <th className="p-4">Birim Fiyat</th>
-                                <th className="p-4"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {items.map((item) => (
-                                <tr key={item.id} className="border-t border-white/5 group">
-                                    <td className="p-4 w-32">
-                                        <div className="w-20 h-20 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden border border-white/10 relative">
-                                            {item.image ? (
-                                                <>
-                                                    <img src={item.image} className="w-full h-full object-cover" />
-                                                    <button onClick={() => updateItem(item.id, "image", null)} className="absolute top-1 right-1 bg-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={10} /></button>
-                                                </>
-                                            ) : (
-                                                <label className="cursor-pointer opacity-20 hover:opacity-100 flex flex-col items-center gap-1">
-                                                    <Image size={20} />
-                                                    <span className="text-[8px]">Görsel</span>
-                                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleImageChange(item.id, e.target.files[0])} />
-                                                </label>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <textarea value={item.description} onChange={(e) => updateItem(item.id, "description", e.target.value)} className="w-full bg-transparent border-none focus:ring-0 text-sm resize-none outline-none" rows={3} placeholder="Ürün detayı..." />
-                                    </td>
-                                    <td className="p-4 w-24">
-                                        <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(item.id, "quantity", Number(e.target.value))} className="w-full bg-white/5 rounded-lg p-2 text-center border border-white/5 outline-none focus:border-[#EAB308]" />
-                                    </td>
-                                    <td className="p-4 w-32">
-                                        <div className="relative">
-                                            <input type="number" min="0" value={item.unitPrice} onChange={(e) => updateItem(item.id, "unitPrice", Number(e.target.value))} className="w-full bg-white/5 rounded-lg p-2 pr-8 text-right border border-white/5 outline-none focus:border-[#EAB308]" />
-                                            <span className="absolute right-2 top-2 text-[10px] text-white/40">TL</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 w-10">
-                                        <button onClick={() => removeRow(item.id)} disabled={items.length === 1} className="text-red-500/50 hover:text-red-500 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"><Trash2 size={16} /></button>
-                                    </td>
+                {/* Items Table */}
+                <div className="bg-[#121212] rounded-[2rem] border border-white/5 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-white/5 text-[10px] uppercase text-white/40">
+                                <tr>
+                                    <th className="p-4 text-left w-32">Görsel</th>
+                                    <th className="p-4 text-left">Açıklama</th>
+                                    <th className="p-4 w-24">Miktar</th>
+                                    <th className="p-4 w-40">Birim Fiyat</th>
+                                    <th className="p-4 w-10"></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {items.map((item) => (
+                                    <tr key={item.id} className="border-t border-white/5 group">
+                                        <td className="p-4">
+                                            <div className="w-20 h-20 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden border border-white/10 relative group/img">
+                                                {item.image ? (
+                                                    <>
+                                                        <img src={item.image} className="w-full h-full object-cover" alt="Ürün" />
+                                                        <button
+                                                            onClick={() => updateItem(item.id, "image", null)}
+                                                            className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                                        >
+                                                            <Trash2 size={16} className="text-red-500" />
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <label className="cursor-pointer opacity-20 hover:opacity-100 flex flex-col items-center gap-1 transition-opacity">
+                                                        <ImageIcon size={20} />
+                                                        <span className="text-[8px]">Yükle</span>
+                                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleImageChange(item.id, e.target.files[0])} />
+                                                    </label>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <textarea
+                                                value={item.description}
+                                                onChange={(e) => updateItem(item.id, "description", e.target.value)}
+                                                className="w-full bg-white/5 rounded-xl p-3 focus:ring-1 focus:ring-[#EAB308] text-sm resize-none outline-none border border-transparent focus:border-[#EAB308]"
+                                                rows={3}
+                                                placeholder="Ürün detaylarını buraya yazın..."
+                                            />
+                                        </td>
+                                        <td className="p-4">
+                                            <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(item.id, "quantity", Math.max(0, Number(e.target.value)))} className="w-full bg-white/5 rounded-lg p-2 text-center border border-white/5 outline-none focus:border-[#EAB308]" />
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="relative">
+                                                <input type="number" min="0" value={item.unitPrice} onChange={(e) => updateItem(item.id, "unitPrice", Math.max(0, Number(e.target.value)))} className="w-full bg-white/5 rounded-lg p-2 pr-8 text-right border border-white/5 outline-none focus:border-[#EAB308]" />
+                                                <span className="absolute right-2 top-2 text-[10px] text-white/40">TL</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <button onClick={() => removeRow(item.id)} disabled={items.length === 1} className="text-white/20 hover:text-red-500 transition-colors disabled:opacity-0">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 pb-10">
-                    <button onClick={addRow} className="bg-white/5 hover:bg-white/10 px-8 py-4 rounded-full border border-white/10 text-xs font-bold uppercase tracking-widest transition-all active:scale-95"><Plus size={16} className="inline mr-2" /> Yeni Satır Ekle</button>
-                    <div className="bg-[#EAB308] p-6 rounded-[2rem] text-black min-w-[300px] shadow-xl shadow-yellow-500/10">
+                {/* Footer Actions & Total */}
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6 pb-20">
+                    <button onClick={addRow} className="group bg-white/5 hover:bg-[#EAB308] hover:text-black px-8 py-4 rounded-full border border-white/10 text-xs font-bold uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
+                        <Plus size={16} className="transition-transform group-hover:rotate-90" /> Yeni Satır Ekle
+                    </button>
+
+                    <div className="bg-[#EAB308] p-6 rounded-[2.5rem] text-black min-w-[320px] shadow-2xl shadow-yellow-500/20">
                         <div className="flex justify-between items-center font-bold">
                             <div className="flex flex-col">
-                                <span className="text-[10px] uppercase opacity-60">Genel Toplam</span>
-                                <span className="text-[8px] opacity-60">(KDV Hariç)</span>
+                                <span className="text-[10px] uppercase opacity-70 leading-none mb-1">Genel Toplam</span>
+                                <span className="text-[8px] opacity-60 font-normal italic">KDV Dahil Değildir</span>
                             </div>
-                            <span className="text-3xl tracking-tighter">{toplamTutar.toLocaleString('tr-TR')} TL</span>
+                            <div className="flex flex-col items-end">
+                                <span className="text-3xl tracking-tighter leading-none">{toplamTutar.toLocaleString('tr-TR')} TL</span>
+                            </div>
                         </div>
                     </div>
                 </div>

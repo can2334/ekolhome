@@ -7,7 +7,6 @@ import {
     Clock, CheckCircle2, Gauge, FileText, FolderOpen
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Sidebar from "../Sidebar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -82,7 +81,6 @@ export default function AdminDashboard() {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col md:flex-row font-sans tracking-tight">
-            <Sidebar />
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
                 {/* Header */}
                 <header className="sticky top-0 z-40 bg-black/60 backdrop-blur-2xl border-b border-white/5 shrink-0 px-6 py-4 flex items-center justify-between">

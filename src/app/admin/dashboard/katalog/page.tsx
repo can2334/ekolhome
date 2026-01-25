@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation"; // Router eklendi
-import Sidebar from "../../Sidebar";
 import { Trash2, FileText, Loader2, UploadCloud, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface KatalogItem {
@@ -136,7 +135,6 @@ export default function AdminKatalog() {
     };
     return (
         <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col lg:flex-row font-sans relative">
-            <Sidebar />
             <main className="flex-1 p-6 lg:p-12 h-screen overflow-y-auto">
                 <div className="flex justify-between items-center mb-10">
                     <div className="flex flex-col">
