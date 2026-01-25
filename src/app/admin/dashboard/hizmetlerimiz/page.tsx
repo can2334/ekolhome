@@ -8,7 +8,10 @@ import {
     UploadCloud, Link as LinkIcon
 } from "lucide-react";
 
+// 1. API_URL zaten senin Worker'ın. 
+// Upload API'si için de aynı kök dizini kullanacağız.
 const API_URL = "https://ekolhome.smusa9883x.workers.dev/api/services";
+const UPLOAD_API = "https://ekolhome.smusa9883x.workers.dev/api/upload";
 
 export default function AdminHizmetler() {
     const router = useRouter();
@@ -29,7 +32,6 @@ export default function AdminHizmetler() {
         status: "active"
     });
 
-    // Token'ı hem useEffect hem de fonksiyonlarda kullanabilmek için
     const getAuthToken = () => localStorage.getItem("admin_token");
 
     const fetchHizmetler = async () => {
@@ -49,31 +51,36 @@ export default function AdminHizmetler() {
         }
     }, [router]);
 
+    // --- KRİTİK GÜNCELLEME: R2 UPLOAD FONKSİYONU ---
     const handleFileUpload = async (file: File) => {
-        if (!form.slug) {
-            alert("Önce başlık girerek slug oluşmasını sağlayın!");
-            return null;
-        }
+        if (!file) return null;
+
         setIsUploading(true);
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("folder", form.slug);
+        // İstersen folder gönderebilirsin ama R2 kodunda safeFileName kullandık zaten.
 
         try {
             const token = getAuthToken();
-            const res = await fetch("/api/upload", {
+            const res = await fetch(UPLOAD_API, { // Artık Vercel değil, Worker API!
                 method: "POST",
                 body: formData,
                 headers: {
-                    "Authorization": `Bearer ${token}` // Upload API'si de korumalıysa
+                    "Authorization": `Bearer ${token}`
                 }
             });
+
             const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || "Yükleme başarısız");
+
             setIsUploading(false);
-            return data.url;
-        } catch (err) {
+            // Worker'dan dönen 'filePath' (yani https://pub-xxx.r2.dev/...)
+            return data.filePath;
+        } catch (err: any) {
             setIsUploading(false);
-            alert("Yükleme hatası!");
+            console.error("Upload hatası:", err);
+            alert("Yükleme hatası: " + err.message);
             return null;
         }
     };
@@ -81,15 +88,14 @@ export default function AdminHizmetler() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
-        const token = getAuthToken(); // Token'ı al
+        const token = getAuthToken();
 
         try {
             const res = await fetch(`${API_URL}/save`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}` // İSTEDİĞİN KRİTİK EKLEME BURADA
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify(form),
             });
@@ -111,13 +117,12 @@ export default function AdminHizmetler() {
     const handleDelete = async (id: number) => {
         if (!confirm("Emin misiniz?")) return;
         const token = getAuthToken();
-
         try {
             await fetch(`${API_URL}/delete`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}` // Silme işlemi için de gerekli
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({ id }),
             });
@@ -162,9 +167,8 @@ export default function AdminHizmetler() {
                                 {hizmetler.length} Kayıt
                             </p>
                         </div>
-
                         <button
-                            type="button" // Formu tetiklememesi için
+                            type="button"
                             onClick={() => { resetForm(); setIsModalOpen(true); }}
                             className="bg-[#d9a066] text-black text-[10px] font-bold px-4 py-2 rounded-full uppercase tracking-widest hover:bg-white transition-all flex items-center gap-2"
                         >
@@ -199,12 +203,6 @@ export default function AdminHizmetler() {
                                 </div>
                             </div>
                         ))}
-
-                        {hizmetler.length === 0 && (
-                            <div className="text-center py-20 border-2 border-dashed border-white/5 rounded-[2rem]">
-                                <p className="text-white/20 text-xs uppercase tracking-[0.2em]">Henüz koleksiyon eklenmemiş</p>
-                            </div>
-                        )}
                     </div>
                 </div>
             </main>
@@ -212,7 +210,6 @@ export default function AdminHizmetler() {
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/95 backdrop-blur-md">
                     <div className="bg-[#0F0F0F] w-full max-w-4xl h-[100dvh] md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col md:rounded-[2.5rem] border-t md:border border-white/10">
-
                         <div className="p-5 md:p-8 border-b border-white/5 flex items-center justify-between shrink-0">
                             <div>
                                 <h2 className="text-[#d9a066] text-xs font-bold uppercase tracking-[0.2em]">{form.id ? "Düzenle" : "Yeni Kayıt"}</h2>
@@ -225,7 +222,6 @@ export default function AdminHizmetler() {
 
                         <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 md:p-10 space-y-6 md:space-y-8 pb-32 md:pb-10">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-
                                 <div className="space-y-5">
                                     <div className="space-y-2">
                                         <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Başlık</label>
@@ -248,26 +244,21 @@ export default function AdminHizmetler() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">
-                                            Kısa Açıklama
-                                        </label>
+                                        <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Kısa Açıklama</label>
                                         <textarea
                                             value={form.description}
                                             onChange={e => setForm({ ...form, description: e.target.value })}
-                                            className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl h-24 resize-none outline-none focus:border-[#d9a066] transition-all text-sm"
-                                            placeholder="Arama sonuçlarında görünecek kısa özet..."
-                                            required
+                                            className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl h-24 resize-none outline-none focus:border-[#d9a066] text-sm"
+                                            placeholder="Özet..." required
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="text-[10px] text-white/40 font-bold uppercase tracking-widest ml-1">Kategori</label>
                                             <input
-                                                type="text"
                                                 value={form.category}
                                                 onChange={e => setForm({ ...form, category: e.target.value })}
-                                                placeholder="Kategori yazın..."
-                                                className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl text-xs outline-none focus:border-[#d9a066] transition-all"
+                                                className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl text-xs outline-none focus:border-[#d9a066]"
                                                 required
                                             />
                                         </div>
@@ -298,9 +289,12 @@ export default function AdminHizmetler() {
                                                 <div className="text-center">
                                                     <UploadCloud className="mx-auto mb-2 text-white/10" size={32} />
                                                     <p className="text-[9px] uppercase tracking-widest text-white/20 font-bold">Resim Seç</p>
-                                                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={async e => {
-                                                        const url = await handleFileUpload(e.target.files?.[0]!);
-                                                        if (url) setForm({ ...form, cover_image: url });
+                                                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" disabled={isUploading} onChange={async e => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const url = await handleFileUpload(file);
+                                                            if (url) setForm({ ...form, cover_image: url });
+                                                        }
                                                     }} />
                                                 </div>
                                             )}
@@ -323,7 +317,7 @@ export default function AdminHizmetler() {
                                             ))}
                                             <div className="aspect-square bg-white/5 border border-dashed border-white/10 rounded-xl flex items-center justify-center relative hover:bg-white/10 transition-colors">
                                                 <Plus size={16} className="text-white/20" />
-                                                <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => {
+                                                <input type="file" multiple className="absolute inset-0 opacity-0 cursor-pointer" disabled={isUploading} onChange={async e => {
                                                     const files = Array.from(e.target.files || []);
                                                     let urls = [...form.extra_images.split(',').filter(Boolean)];
                                                     for (const f of files) {
@@ -344,7 +338,7 @@ export default function AdminHizmetler() {
                                     value={form.content}
                                     onChange={e => setForm({ ...form, content: e.target.value })}
                                     className="w-full bg-white/[0.03] border border-white/10 p-4 rounded-2xl h-40 resize-none outline-none focus:border-[#d9a066] text-sm"
-                                    placeholder="Detaylı açıklama yazın..."
+                                    placeholder="Detaylı açıklama..."
                                 />
                             </div>
 
@@ -362,8 +356,6 @@ export default function AdminHizmetler() {
                     </div>
                 </div>
             )}
-
-            <div className="fixed -bottom-24 -right-24 w-96 h-96 bg-[#d9a066]/5 blur-[120px] rounded-full -z-10 pointer-events-none"></div>
         </div>
     );
 }
