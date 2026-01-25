@@ -85,6 +85,25 @@ export default {
             }
         };
 
+        /**
+         * R2 DOSYA SİLME FONKSİYONU - YENİ EKLENEN
+         */
+        const deleteFromR2 = async (fileUrl) => {
+            if (!fileUrl || typeof fileUrl !== 'string') return;
+            try {
+                // URL'den sadece dosya adını çeker (Örn: "172...-resim.jpg")
+                const urlObj = new URL(fileUrl);
+                const fileName = urlObj.pathname.startsWith('/')
+                    ? urlObj.pathname.substring(1)
+                    : urlObj.pathname;
+
+                await env.MY_BUCKET.delete(fileName);
+                console.log("R2'den başarıyla silindi:", fileName);
+            } catch (e) {
+                console.error("R2 silme hatası (Dosya: " + fileUrl + "):", e.message);
+            }
+        };
+
         try {
             const clientDetails = getClientDetails(request);
 
@@ -305,13 +324,24 @@ export default {
                 }
             }
 
-            // Auth kontrolü (Login hariç tüm POST/PUT/DELETE işlemleri)
             let currentUserId = null;
-            if (["POST", "PUT", "DELETE"].includes(method) && pathname !== "/api/login") {
+            const authHeader = request.headers.get("Authorization");
+            const token = authHeader ? authHeader.replace("Bearer ", "").trim() : null;
+
+            // Senaryo A: Eğer bizim özel R2 şifremiz geldiyse kapıyı aç
+            if (token === "s3nnzywalker_r2_secure_2026") {
+                currentUserId = "r2_admin";
+            }
+            // Senaryo B: Eğer login olmuş bir kullanıcıysa DB'den kontrol et
+            else if (token) {
                 currentUserId = await checkAuth(request);
+            }
+
+            // Güvenlik Duvarı: Login hariç tüm veri işlemlerinde (POST/PUT/DELETE) yetki yoksa durdur
+            if (["POST", "PUT", "DELETE"].includes(method) && pathname !== "/api/login") {
                 if (!currentUserId) {
                     return new Response(
-                        JSON.stringify({ error: "Yetkisiz Erişim - Geçerli token bulunamadı" }),
+                        JSON.stringify({ error: "Yetkisiz Erişim - Lütfen geçerli bir token gönderin." }),
                         { status: 401, headers: corsHeaders }
                     );
                 }
@@ -360,7 +390,6 @@ export default {
                 const body = await request.json();
                 // Frontend'den gelen season verisini de buraya ekledik
                 const { title, pdf_url, season } = body;
-                const finalPdfUrl = pdf_url.includes('?') ? pdf_url : `${pdf_url}?v=${Date.now()}`;
                 try {
                     // INSERT OR REPLACE veya ON CONFLICT yapısı
                     await env.EKOLHOME_DB.prepare(`
@@ -403,19 +432,26 @@ export default {
                 return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
             }
 
-            // Catalog Silme
+            // Catalog Silme - R2'DEN DE SİL
             if (method === "POST" && pathname === "/api/catalog/delete") {
                 const { id } = await request.json();
 
-                const oldData = await env.EKOLHOME_DB.prepare(
-                    "SELECT * FROM catalog WHERE id = ?"
+                // 1. DB'den veriyi al
+                const item = await env.EKOLHOME_DB.prepare(
+                    "SELECT pdf_url FROM catalog WHERE id = ?"
                 ).bind(id).first();
 
+                // 2. R2'den dosyayı sil
+                if (item?.pdf_url) {
+                    await deleteFromR2(item.pdf_url);
+                }
+
+                // 3. DB'den kaydı sil
                 await env.EKOLHOME_DB.prepare(
                     "DELETE FROM catalog WHERE id = ?"
                 ).bind(id).run();
 
-                await logActivity(currentUserId, "DELETE_CATALOG", clientDetails, oldData);
+                await logActivity(currentUserId, "DELETE_CATALOG", clientDetails, item);
 
                 return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
             }
@@ -526,74 +562,71 @@ export default {
                 return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
             }
 
+            // Service Silme - R2'DEN DE SİL (COVER + EXTRA IMAGES)
             if (method === "POST" && pathname === "/api/services/delete") {
                 const { id } = await request.json();
 
-                const oldData = await env.EKOLHOME_DB.prepare(
-                    "SELECT * FROM services WHERE id = ?"
+                const service = await env.EKOLHOME_DB.prepare(
+                    "SELECT cover_image, extra_images FROM services WHERE id = ?"
                 ).bind(id).first();
 
-                await env.EKOLHOME_DB.prepare(
-                    "DELETE FROM services WHERE id = ?"
-                ).bind(id).run();
+                if (service) {
+                    // 1. Kapak fotoğrafını sil
+                    if (service.cover_image) {
+                        await deleteFromR2(service.cover_image);
+                    }
 
-                await logActivity(currentUserId, "DELETE_SERVICE", clientDetails, oldData);
+                    // 2. Ekstra fotoğrafları sil
+                    if (service.extra_images) {
+                        try {
+                            // Eğer DB'de JSON array olarak tutuyorsan:
+                            const extraImages = JSON.parse(service.extra_images);
+                            if (Array.isArray(extraImages)) {
+                                for (const imgUrl of extraImages) {
+                                    await deleteFromR2(imgUrl);
+                                }
+                            }
+                        } catch (e) {
+                            // Eğer DB'de virgülle ayrılmış string olarak tutuyorsan (senin dediğin yöntem):
+                            const extraImages = service.extra_images.split(',');
+                            for (const imgUrl of extraImages) {
+                                if (imgUrl.trim()) await deleteFromR2(imgUrl.trim());
+                            }
+                        }
+                    }
+                }
+
+                // 3. Veritabanından kaydı sil
+                await env.EKOLHOME_DB.prepare("DELETE FROM services WHERE id = ?").bind(id).run();
 
                 return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
             }
-            // Worker içindeki API Upload kısmı - GÜNCEL VE HATASIZ
-            if (method === "POST" && pathname === "/api/upload") {
+            if (pathname === "/api/upload" && method === "POST") {
                 try {
                     const formData = await request.formData();
                     const file = formData.get("file");
 
-                    if (!file) {
-                        return new Response(JSON.stringify({ error: "Dosya seçilmedi" }), {
-                            status: 400,
-                            headers: corsHeaders
-                        });
-                    }
+                    if (!file) return new Response(JSON.stringify({ error: "Dosya yok" }), { status: 400, headers: corsHeaders });
 
-                    // 1. Dosya ismini güvenli ve benzersiz hale getirelim
-                    // Boşlukları tire yapar, özel karakterleri temizler ve başına zaman damgası ekler
                     const safeFileName = `${Date.now()}-${file.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.-]/g, '')}`;
+                    const arrayBuffer = await file.arrayBuffer();
 
-                    // 2. DOSYAYI R2 KOVASINA GÖNDER (Sihirli dokunuş burası)
-                    // env.MY_BUCKET, Cloudflare panelinde yaptığın 'Binding' ismidir.
-                    await env.MY_BUCKET.put(safeFileName, file.stream(), {
-                        httpMetadata: {
-                            contentType: file.type || 'application/octet-stream',
-                            // Tarayıcıda direkt açılması yerine indirilmesini istersen aşağıdaki satırı açabilirsin
-                            // contentDisposition: `inline; filename="${safeFileName}"`,
-                        }
+                    // R2'ye yükle (MY_BUCKET)
+                    await env.MY_BUCKET.put(safeFileName, arrayBuffer, {
+                        httpMetadata: { contentType: file.type || 'image/jpeg' }
                     });
 
-                    // 3. R2'deki dosyaya erişmek için Public URL oluşturma
-                    // ÖNEMLİ: R2 panelinde Settings -> "Public Development URL" kısmındaki linki buraya yapıştır!
-                    // Örn: https://pub-6b4ddd94ae6c0bb8dcd10d45d057ad47.r2.dev
-                    const publicR2BaseUrl = "https://pub-6b4ddd94ae6c0bb8dcd10d45d057ad47.r2.dev";
-                    const fileUrl = `${publicR2BaseUrl}/${safeFileName}`;
+                    // R2 Public URL oluştur
+                    // MY_BUCKET için public domain: https://pub-1f503f0efc3249b0aaf61031d2b041c2.r2.dev
+                    const fileUrl = `https://pub-1f503f0efc3249b0aaf61031d2b041c2.r2.dev/${safeFileName}`;
 
-                    // 4. Başarılı yanıtı döndür
                     return new Response(JSON.stringify({
                         success: true,
-                        filePath: fileUrl, // Frontend artık bu linki alıp veritabanına kaydedecek
-                        fileName: safeFileName
-                    }), {
-                        headers: {
-                            ...corsHeaders,
-                            "Content-Type": "application/json"
-                        }
-                    });
+                        filePath: fileUrl
+                    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-                } catch (error) {
-                    console.error("R2 Upload Error:", error);
-                    return new Response(JSON.stringify({
-                        error: "Yükleme başarısız: " + error.message
-                    }), {
-                        status: 500,
-                        headers: corsHeaders
-                    });
+                } catch (e) {
+                    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
                 }
             }
             // 404 - Rota Bulunamadı
