@@ -90,18 +90,21 @@ export default function AdminKatalog() {
 
         try {
             let finalPdfPath = katalog?.pdf_url || "";
+
+            // Eğer yeni bir dosya seçildiyse yükle
             if (pdfFile) {
-                finalPdfPath = await uploadFile(pdfFile);
+                const uploadedPath = await uploadFile(pdfFile);
+                // Tarayıcı önbelleğini (cache) kırmak için sonuna benzersiz bir sorgu ekleyelim
+                finalPdfPath = `${uploadedPath}?v=${Date.now()}`;
             }
 
             setUploading({ active: true, percent: 70 });
 
-            // Veritabanındaki yapıya tam uyum için body:
             const payload = {
-                id: 1, // Görseldeki gibi id her zaman 1 olmalı
+                id: 1,
                 title: title.trim(),
                 season: season.trim() || "2025/26",
-                pdf_url: finalPdfPath
+                pdf_url: finalPdfPath // Yeni yol burada gönderiliyor
             };
 
             const res = await fetch(`${API_URL}/add`, {
@@ -114,19 +117,17 @@ export default function AdminKatalog() {
             });
 
             if (!res.ok) {
-                const errorData = await res.json();
-                // Eğer hala "constraint" hatası alıyorsan, 
-                // bu API'nin INSERT yerine UPDATE yapması gerektiğini gösterir.
-                throw new Error(errorData.message || "Sunucu güncelleme hatası verdi.");
+                throw new Error("Veritabanı güncellenemedi.");
             }
 
-            setUploading({ active: true, percent: 100 });
-            alert("Katalog başarıyla güncellendi!");
+            // Başarılı olduktan sonra state'i hemen güncelle ki sayfa yenilenmeden yeni dosya görünsün
+            setKatalog(prev => prev ? { ...prev, pdf_url: finalPdfPath, title, season } : null);
 
+            setUploading({ active: true, percent: 100 });
+            alert("Katalog ve PDF başarıyla güncellendi!");
             setPdfFile(null);
-            fetchKatalog();
+
         } catch (error: any) {
-            // Hata mesajını daha detaylı gösterelim ki sorunu anlayalım
             console.error("Hata Detayı:", error);
             alert(`Hata: ${error.message}`);
         } finally {
