@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, MapPin, Phone, Mail, Trash2, Edit3, Globe, Save, X, ExternalLink } from "lucide-react";
-import Sidebar from "../../Sidebar";
 import toast, { Toaster } from "react-hot-toast"; // Toast eklendi
 
 const API_BASE = "https://ekolhome.smusa9883x.workers.dev/api/contact";
@@ -95,7 +94,6 @@ export default function AdminIletisim() {
     return (
         <div className="min-h-screen bg-[#0F0F0F] text-white flex font-sans overflow-hidden">
             <Toaster position="top-right" reverseOrder={false} /> {/* Konteyner eklendi */}
-            <Sidebar />
             <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#0A0A0A]">
                 <header className="h-20 border-b border-white/5 flex items-center justify-between px-12 bg-[#0A0A0A]/80 backdrop-blur-xl z-30">
                     <h1 className="text-xs font-bold tracking-[0.4em] uppercase text-[#d9a066]">İletişim Yönetimi</h1>
