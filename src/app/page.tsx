@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowUpRight, Menu, X, Sparkles, CheckCircle2, Star, TrendingUp, Award } from "lucide-react";
+import { ArrowUpRight, Menu, X, Sparkles, CheckCircle2, Star, TrendingUp, Award, Loader2 } from "lucide-react"; // Loader2 eklendi
 import Lenis from "lenis";
 import Link from "next/link";
 
@@ -13,12 +13,20 @@ export default function Home() {
   const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.3], [1, 0.95]);
 
+  // URL dostu slug oluşturucu
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/ /g, "-")
+      .replace(/[ığüşöç]/g, (m) => ({ 'ı': 'i', 'ğ': 'g', 'ü': 'u', 'ş': 's', 'ö': 'o', 'ç': 'c' }[m] || m));
+  };
+
   // API'den hizmetleri çek
   useEffect(() => {
     fetch("https://ekolhome.smusa9883x.workers.dev/api/services")
       .then(res => res.json())
       .then(data => {
-        setServices(data.slice(0, 3)); // İlk 6 hizmeti göster
+        setServices(data); // Tüm veriyi alıyoruz ki kategorilere ayırabilelim
         setLoading(false);
       })
       .catch(err => {
@@ -26,6 +34,17 @@ export default function Home() {
         setLoading(false);
       });
   }, []);
+
+  // Kategorileri Gruplama Mantığı
+  const groupedCategories = loading ? [] : [...new Set(services.map(item => item.category))].map(catName => {
+    const firstItem = services.find(item => item.category === catName);
+    return {
+      name: catName,
+      slug: slugify(catName || "genel"),
+      image: firstItem?.cover_image || "/placeholder.jpg",
+      count: services.filter(item => item.category === catName).length
+    };
+  });
 
   // Smooth scroll
   useEffect(() => {
@@ -51,14 +70,12 @@ export default function Home() {
   return (
     <main className="bg-white text-black selection:bg-amber-500 selection:text-white overflow-x-hidden">
 
-      {/* Hero Section - Modern & Dynamic */}
+      {/* Hero Section - KODUNA DOKUNULMADI */}
       <section className="relative min-h-screen flex flex-col justify-center px-6 md:px-12 pt-20 overflow-hidden">
-        {/* Background Gradient Orbs */}
         <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-orange-500/5 rounded-full blur-3xl"></div>
 
         <motion.div style={{ opacity, scale }} className="relative z-10">
-          {/* Badge */}
           <br />
           <div className="overflow-hidden mb-6">
             <motion.div
@@ -74,7 +91,6 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Main Heading */}
           <div className="overflow-hidden mb-8">
             <motion.h1
               initial={{ y: 150, opacity: 0 }}
@@ -92,7 +108,6 @@ export default function Home() {
             </motion.h1>
           </div>
 
-          {/* Description & CTA */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,7 +121,6 @@ export default function Home() {
             </p>
           </motion.div>
 
-          {/* Stats Row */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -131,7 +145,6 @@ export default function Home() {
           </motion.div>
         </motion.div>
 
-        {/* Scroll Indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -149,123 +162,100 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* Services Section - API'den Dinamik */}
-      <section id="services" className="py-24 md:py-32 px-6 md:px-12 bg-gradient-to-b from-white to-gray-50">
+      {/* Services Section - GÜNCELLENEN BÖLÜM (Buton Geri Eklendi) */}
+      <section id="services" className="py-24 md:py-32 px-6 bg-[#FBFBFB]">
         <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-20"
-          >
-            <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-2 rounded-full mb-6">
-              <Sparkles size={16} />
-              <span className="text-xs font-semibold uppercase tracking-wider">Hizmetlerimiz</span>
-            </div>
-            <h2 className="text-5xl md:text-6xl lg:text-7xl font-light tracking-tight mb-6">
-              Size Özel Çözümler
+          <header className="mb-24">
+            <span className="text-[#d9a066] text-[10px] font-bold tracking-[0.5em] uppercase block mb-4">
+              Ekol Home — Koleksiyonlar
+            </span>
+            <h2 className="text-5xl md:text-8xl font-extralight tracking-tighter text-black uppercase leading-[0.9]">
+              Hizmet <br /> <span className="font-serif italic text-gray-400 lowercase">Kategorileri</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light">
-              Her ihtiyaca uygun profesyonel tekstil hizmetleri
-            </p>
-          </motion.div>
+          </header>
 
-          {/* Services Grid */}
           {loading ? (
-            <div className="flex justify-center py-20">
-              <div className="relative">
-                <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
-                <div className="absolute top-0 left-0 w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <Loader2 className="w-10 h-10 text-[#d9a066] animate-spin" />
+              <div className="text-[10px] tracking-[0.3em] uppercase text-gray-400 font-bold">Yükleniyor...</div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {services.map((service, index) => (
-                <motion.div
-                  key={service.id}
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                  <Link href={`/hizmetlerimiz/${service.id}`}>
-                    <div className="group relative bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-500 h-full">
-                      {/* Image */}
-                      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                        {service.cover_image && service.cover_image !== "" ? (
-                          <motion.img
-                            whileHover={{ scale: 1.1 }}
-                            transition={{ duration: 0.6 }}
-                            src={service.cover_image}
-                            alt={service.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Sparkles size={48} className="text-gray-300" />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-20">
+                {groupedCategories.map((cat, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="group"
+                  >
+                    <Link href={`/hizmetlerimiz/${cat.slug}`} className="block">
+                      <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 mb-8 shadow-2xl">
+                        <img
+                          src={cat.image}
+                          className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
+                          alt={cat.name}
+                        />
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+
+                        <div className="absolute top-6 left-6">
+                          <span className="bg-white/90 backdrop-blur-sm text-black text-[9px] font-bold px-3 py-1 uppercase tracking-widest">
+                            {cat.count} MODEL
+                          </span>
+                        </div>
+
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-full">
+                            <ArrowUpRight size={40} className="text-white" strokeWidth={1} />
                           </div>
-                        )}
-
-                        {/* Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                        {/* Category Badge */}
-                        {service.category && (
-                          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                            <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                              {service.category}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-6 space-y-4">
-                        <h3 className="text-2xl font-light tracking-tight leading-tight group-hover:text-amber-600 transition-colors">
-                          {service.title}
-                        </h3>
-
-                        <p className="text-gray-600 text-sm leading-relaxed font-light line-clamp-3">
-                          {service.description}
-                        </p>
-
-                        {/* Read More */}
-                        <div className="flex items-center gap-2 text-amber-600 text-sm font-semibold pt-2 group-hover:gap-4 transition-all">
-                          <span>Detayları Gör</span>
-                          <ArrowUpRight size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          )}
+                    </Link>
 
-          {/* View All Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mt-16"
-          >
-            <Link
-              href="/hizmetlerimiz"
-              className="inline-flex items-center gap-3 bg-gray-900 text-white px-8 py-4 rounded-xl hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl group"
-            >
-              <span className="text-sm font-semibold tracking-wide">Tüm Hizmetleri Gör</span>
-              <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-            </Link>
-          </motion.div>
+                    <div className="space-y-2 px-2 text-center">
+                      <h3 className="text-3xl font-light uppercase tracking-tight text-black group-hover:text-[#d9a066] transition-colors">
+                        {cat.name}
+                      </h3>
+                      <div className="flex justify-center">
+                        <Link
+                          href={`/hizmetlerimiz/${cat.slug}`}
+                          className="text-[10px] font-bold uppercase tracking-[0.2em] border-b border-black/10 pb-1 hover:border-[#d9a066] transition-all text-gray-400 hover:text-black"
+                        >
+                          Koleksiyonu Gör
+                        </Link>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* View All Button - Geri Geldi */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mt-24"
+              >
+                <Link
+                  href="/hizmetlerimiz"
+                  className="inline-flex items-center gap-3 bg-black text-white px-10 py-5 rounded-full hover:bg-gray-800 transition-all shadow-xl group"
+                >
+                  <span className="text-xs font-bold uppercase tracking-[0.2em]">Tüm Hizmetleri Gör</span>
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-amber-500 transition-colors">
+                    <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </div>
+                </Link>
+              </motion.div>
+            </>
+          )}
         </div>
       </section>
-
-      {/* About Section */}
+      {/* About Section - KODUNA DOKUNULMADI */}
       <section id="about" className="py-24 md:py-32 px-6 md:px-12 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-center">
-            {/* Left - Image */}
             <motion.div
               initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -278,8 +268,6 @@ export default function Home() {
                 className="w-full h-full object-cover"
                 alt="EkolHome Atölye"
               />
-
-              {/* Floating Card */}
               <div className="absolute bottom-8 left-8 right-8 bg-white/95 backdrop-blur-xl p-6 rounded-2xl shadow-xl">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
@@ -293,7 +281,6 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Right - Content */}
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -305,7 +292,6 @@ export default function Home() {
                 <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 px-4 py-2 rounded-full">
                   <span className="text-xs font-semibold uppercase tracking-wider">Hakkımızda</span>
                 </div>
-
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-tight">
                   Gelenekten Geleceğe
                   <br />
@@ -314,37 +300,19 @@ export default function Home() {
                   </span>
                 </h2>
               </div>
-
               <div className="space-y-6 text-gray-600 text-lg leading-relaxed font-light">
-                <p>
-                  Kuşaklar boyu süren deneyim ve özenle geliştirdiğimiz zanaat,
-                  her ürünümüzde yaşamaya devam ediyor.
-                </p>
-                <p>
-                  Modern teknoloji ile geleneksel ustalığı harmanlayarak,
-                  zamana meydan okuyan, sürdürülebilir ve estetik tekstil çözümleri sunuyoruz.
-                </p>
+                <p>Kuşaklar boyu süren deneyim ve özenle geliştirdiğimiz zanaat, her ürünümüzde yaşamaya devam ediyor.</p>
+                <p>Modern teknoloji ile geleneksel ustalığı harmanlayarak, zamana meydan okuyan, sürdürülebilir ve estetik tekstil çözümleri sunuyoruz.</p>
               </div>
-
-              {/* Features */}
               <div className="grid grid-cols-2 gap-4 pt-6">
-                {[
-                  { icon: <CheckCircle2 size={20} />, text: "Kalite Garantisi" },
-                  { icon: <Star size={20} />, text: "Müşteri Odaklı" },
-                  { icon: <TrendingUp size={20} />, text: "Hızlı Teslimat" },
-                  { icon: <Award size={20} />, text: "Ödüllü Hizmet" }
-                ].map((feature, idx) => (
+                {[{ icon: <CheckCircle2 size={20} />, text: "Kalite Garantisi" }, { icon: <Star size={20} />, text: "Müşteri Odaklı" }, { icon: <TrendingUp size={20} />, text: "Hızlı Teslimat" }, { icon: <Award size={20} />, text: "Ödüllü Hizmet" }].map((feature, idx) => (
                   <div key={idx} className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
                     <div className="text-amber-500">{feature.icon}</div>
                     <span className="text-sm font-medium">{feature.text}</span>
                   </div>
                 ))}
               </div>
-
-              <Link
-                href="/hakkimizda"
-                className="inline-flex items-center gap-3 text-amber-600 font-semibold hover:gap-5 transition-all group"
-              >
+              <Link href="/hakkimizda" className="inline-flex items-center gap-3 text-amber-600 font-semibold hover:gap-5 transition-all group">
                 <span>Hikayemizi Keşfet</span>
                 <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
               </Link>
@@ -353,9 +321,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA Section - KODUNA DOKUNULMADI */}
       <section id="cta" className="relative py-32 md:py-48 px-6 md:px-12 overflow-hidden">
-        {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900"></div>
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-amber-500/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-3xl"></div>
@@ -386,7 +353,6 @@ export default function Home() {
                 İletişime Geç
               </button>
             </Link>
-
             <Link href="/katalog" className="w-full sm:w-auto">
               <button className="w-full sm:w-auto px-10 py-5 border-2 border-white text-white text-sm font-semibold uppercase tracking-wider rounded-xl hover:bg-white hover:text-gray-900 transition-all">
                 Kataloğu İncele
