@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, use } from "react";
-import { ArrowLeft, ExternalLink, Sparkles, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ExternalLink, Sparkles, X, ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -175,20 +175,58 @@ export default function UrunDetayPage({ params }: PageProps) {
                     </div>
 
                     <div className="lg:col-span-4">
-                        <div className="sticky top-32 bg-[#fafafa] p-10 border border-gray-100">
-                            <h3 className="text-[10px] font-bold uppercase tracking-[0.5em] mb-8 border-b pb-4">Ürün Detayları</h3>
-                            <div className="space-y-4">
-                                <div className="flex justify-between text-[11px] uppercase tracking-widest">
-                                    <span className="text-gray-400">Referans</span>
-                                    <span className="font-bold">EH-{hizmet?.id}</span>
+                        <div className="sticky top-32 bg-[#fafafa] p-10 border border-gray-100 shadow-sm">
+                            <div className="flex items-center gap-2 mb-8">
+                                <Sparkles size={14} className="text-[#d9a066]" />
+                                <h3 className="text-[10px] font-bold uppercase tracking-[0.5em] border-b pb-1 border-[#d9a066]/20">
+                                    Ürün Kimliği
+                                </h3>
+                            </div>
+
+                            <div className="space-y-6">
+                                {/* Kategori */}
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[9px] text-gray-400 uppercase tracking-widest">Koleksiyon</span>
+                                    <span className="text-xs font-medium uppercase tracking-wider text-neutral-800">
+                                        {hizmet?.category || 'Özel Seri'}
+                                    </span>
                                 </div>
-                                <div className="flex justify-between text-[11px] uppercase tracking-widest">
-                                    <span className="text-gray-400">Kategori</span>
-                                    <span className="font-bold">{hizmet?.category || 'Genel'}</span>
+
+                                {/* Materyal/Doku - Statik ama şık bir ekleme */}
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[9px] text-gray-400 uppercase tracking-widest">Doku & Materyal</span>
+                                    <span className="text-xs font-medium uppercase tracking-wider text-neutral-800">
+                                        Premium Dokuma & El İşçiliği
+                                    </span>
+                                </div>
+
+                                {/* Durum/Stok Hissi */}
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[9px] text-gray-400 uppercase tracking-widest">Üretim Bilgisi</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                        <span className="text-xs font-medium uppercase tracking-wider text-neutral-800">
+                                            Kişiye Özel Üretim
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Menşei */}
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[9px] text-gray-400 uppercase tracking-widest">Atölye</span>
+                                    <span className="text-xs font-medium uppercase tracking-wider text-neutral-800 italic">
+                                        Antalya / Manavgat
+                                    </span>
                                 </div>
                             </div>
-                            <Link href="/iletisim" className="mt-10 w-full bg-black text-white py-5 text-[10px] font-bold uppercase tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#d9a066] transition-all">
-                                Teklif Al <ExternalLink size={14} />
+
+                            {/* Teklif Butonu */}
+                            <Link
+                                href="/iletisim"
+                                className="mt-12 w-full bg-neutral-900 text-white py-5 text-[10px] font-bold uppercase tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-[#d9a066] transition-all duration-500 group"
+                            >
+                                Detaylı Bilgi Al
+                                <ArrowUpRight size={14} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                             </Link>
                         </div>
                     </div>

@@ -10,26 +10,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const router = useRouter();
     const pathname = usePathname();
 
-    // 1. BURASI KRİTİK: Eğer sayfa login sayfasıysa korumayı devre dışı bırak
     const isLoginPage = pathname === "/admin/login" || pathname === "/admin";
 
     useEffect(() => {
-        const token = localStorage.getItem("admin_token");
+        // --- GÜNCELLEME: Çerez Kontrolü ---
+        const tokenInLocal = localStorage.getItem("admin_token");
+        const tokenInCookie = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("admin_token="))
+            ?.split("=")[1];
 
-        if (!token && !isLoginPage) {
-            // Token yok ve login sayfasında değilse: Login'e şutla
-            router.push("/admin/");
-        } else if (token && isLoginPage) {
-            // Token VAR ama hala login sayfasındaysa: Dashboard'a şutla
+        // Hem local'de hem çerezde token olmalı
+        const hasValidToken = !!(tokenInLocal && tokenInCookie);
+
+        if (!hasValidToken && !isLoginPage) {
+            // Oturum geçersiz, temizle ve login'e at
+            localStorage.removeItem("admin_token");
+            localStorage.removeItem("admin_user");
+            router.push("/admin");
+        } else if (hasValidToken && isLoginPage) {
+            // Zaten giriş yapmış, dashboard'a gönder
             router.push("/admin/dashboard");
         } else {
-            // Her şey yolundaysa yüklemeyi bitir
-            setIsAuthenticated(!!token);
+            setIsAuthenticated(hasValidToken);
             setIsLoading(false);
         }
     }, [pathname, isLoginPage, router]);
 
-    // Sayfa kontrol ediliyorken bekleme ekranı
     if (isLoading && !isLoginPage) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-[#0A0A0A]">
@@ -38,7 +45,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    // 2. SIDEBAR SADECE LOGIN DIŞINDA GÖRÜNSÜN
     return (
         <div className="flex h-screen bg-[#0A0A0A] overflow-hidden">
             {isAuthenticated && !isLoginPage && <Sidebar />}

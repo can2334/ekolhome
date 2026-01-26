@@ -36,7 +36,7 @@ export default function RootLayout({
     <html lang="tr">
       <head>
         <title>{dynamicTitle}</title>
-        <meta name="description" content="Ekolhome Premium Veri Yönetim Paneli" />
+        <meta name="description" content="Ekolhome Mobilya Manavgat" />
         <link rel="icon" href="/logo.png" type="image/png" />
       </head>
 

@@ -10,10 +10,10 @@ export default {
         }
 
         const corsHeaders = {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Content-Type": "application/json"
+            "Access-Control-Allow-Origin": "*", // Tüm dünyadan erişime izin ver
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, Range", // Range iPhone için kritik!
+            "Access-Control-Expose-Headers": "Content-Length, Content-Range",
         };
 
         // CORS Preflight
@@ -44,18 +44,28 @@ export default {
          */
         const checkAuth = async (req) => {
             const authHeader = req.headers.get("Authorization");
-            if (!authHeader || !authHeader.startsWith("Bearer ")) {
-                return null;
-            }
+            if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
 
             const token = authHeader.replace("Bearer ", "").trim();
 
             try {
+                // Sadece süresi geçmemiş (expires_at > şu an) olan oturumu getir
+                const now = new Date().toISOString();
                 const session = await env.EKOLHOME_DB.prepare(
-                    "SELECT user_id FROM sessions WHERE id = ? LIMIT 1"
-                ).bind(token).first();
+                    "SELECT user_id FROM sessions WHERE id = ? AND expires_at > ? LIMIT 1"
+                ).bind(token, now).first();
 
-                return session ? session.user_id : null;
+                // Eğer session bulunduysa, her işlemde süreyi 30 dk daha uzatmak istersen (Rolling Session):
+                if (session) {
+                    const newExpiry = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+                    await env.EKOLHOME_DB.prepare(
+                        "UPDATE sessions SET expires_at = ? WHERE id = ?"
+                    ).bind(newExpiry, token).run();
+
+                    return session.user_id;
+                }
+
+                return null;
             } catch (e) {
                 console.error("Auth hatası:", e.message);
                 return null;
@@ -273,10 +283,11 @@ export default {
 
                     // Yeni oturum oluştur
                     try {
+                        const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // Şu an + 30 dk
                         await env.EKOLHOME_DB.prepare(
-                            "INSERT INTO sessions (id, user_id) VALUES (?, ?)"
-                        ).bind(newToken, user.id).run();
-                        console.log("Yeni oturum oluşturuldu");
+                            "INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)"
+                        ).bind(newToken, user.id, expiresAt).run();
+                        console.log("Yeni oturum oluşturuldu, bitiş:", expiresAt);
                     } catch (insertError) {
                         console.error("Session oluşturma hatası:", insertError.message);
                         return new Response(
@@ -298,6 +309,9 @@ export default {
 
                     console.log("=== LOGIN BAŞARILI ===");
 
+                    // 30 dakika (1800 saniye) geçerli olacak cookie
+                    const cookieValue = `admin_token=${newToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=1800`;
+
                     return new Response(
                         JSON.stringify({
                             success: true,
@@ -307,7 +321,13 @@ export default {
                                 username: user.username
                             }
                         }),
-                        { headers: corsHeaders }
+                        {
+                            headers: {
+                                ...corsHeaders,
+                                "Content-Type": "application/json",
+                                "Set-Cookie": cookieValue
+                            }
+                        }
                     );
 
                 } catch (error) {
@@ -612,8 +632,7 @@ export default {
 
                     // R2 Public URL oluştur
                     // MY_BUCKET için public domain: https://pub-1f503f0efc3249b0aaf61031d2b041c2.r2.dev
-                    const fileUrl = `https://pub-1f503f0efc3249b0aaf61031d2b041c2.r2.dev/${safeFileName}`;
-
+                    const fileUrl = `https://cdn.ekolhome.com/${safeFileName}`;
                     return new Response(JSON.stringify({
                         success: true,
                         filePath: fileUrl

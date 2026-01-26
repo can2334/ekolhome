@@ -85,7 +85,7 @@ export default function AdminDashboard() {
                 {/* Header */}
                 <header className="sticky top-0 z-40 bg-black/60 backdrop-blur-2xl border-b border-white/5 shrink-0 px-6 py-4 flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-light tracking-tighter">{greeting}, ADMIN 👋</h2>
+                        <h2 className="text-xl font-light tracking-tighter">{greeting}, EkolHome 👋</h2>
                         <p className="text-[10px] text-gray-500 flex items-center gap-2 tracking-[0.2em]">
                             <Clock size={12} /> {currentTime}
                         </p>
@@ -94,7 +94,17 @@ export default function AdminDashboard() {
                         <button onClick={fetchDashboardData} className={`p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all ${loading ? 'animate-spin text-amber-500' : ''}`}>
                             <RefreshCw size={18} />
                         </button>
-                        <div className="w-9 h-9 bg-gradient-to-tr from-amber-400 to-orange-600 rounded-full flex items-center justify-center font-bold text-xs text-black shadow-lg shadow-amber-500/20">A</div>
+                        <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10 shadow-lg shadow-amber-500/10">
+                            <img
+                                src="/favicon.ico"
+                                alt="Admin"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    // Eğer resim yüklenemezse hata vermesin diye boş bir renk gösterir
+                                    e.currentTarget.src = "https://ui-avatars.com/api/?name=Admin&background=d9a066&color=fff";
+                                }}
+                            />
+                        </div>
                     </div>
                 </header>
 

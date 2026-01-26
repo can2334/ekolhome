@@ -41,17 +41,22 @@ export default function AdminLoginPage() {
 
             // Başarılı giriş kontrolü
             if (response.ok && data.success && data.token) {
-                // Token'ı localStorage'a kaydet
+                // 1. Token'ı localStorage'a kaydet (Mevcut kodun)
                 localStorage.setItem("admin_token", data.token);
 
-                // Kullanıcı bilgilerini kaydet (opsiyonel)
+                // --- BURAYA EKLE (Kritik Satır) ---
+                document.cookie = `admin_token=${data.token}; path=/; max-age=1800; samesite=strict`;
+                // ---------------------------------
+
+                // Kullanıcı bilgilerini kaydet (Mevcut kodun)
                 if (data.user) {
                     localStorage.setItem("admin_user", JSON.stringify(data.user));
                 }
 
                 // Dashboard'a yönlendir
                 router.push("/admin/dashboard");
-            } else {
+            }
+            else {
                 // Worker'dan gelen hata mesajını göster
                 setError(data.error || "Kimlik bilgileri hatalı");
             }
