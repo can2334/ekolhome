@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
-// Worker API URL - Burayı kendi endpoint'inle kontrol et
 const API_URL = "https://ekolhome.smusa9883x.workers.dev/api/services";
 
 const Navbar = () => {
@@ -12,7 +11,6 @@ const Navbar = () => {
     const [servicesOpen, setServicesOpen] = useState(false);
     const [dynamicServices, setDynamicServices] = useState<{ name: string; href: string; id: string }[]>([]);
 
-    // Veritabanından Hizmetleri Çekme
     useEffect(() => {
         fetch(API_URL)
             .then(res => res.json())
@@ -73,7 +71,6 @@ const Navbar = () => {
                                 )}
                             </div>
 
-                            {/* Dropdown Menu */}
                             {link.subLinks && (
                                 <AnimatePresence>
                                     {servicesOpen && (
@@ -112,37 +109,54 @@ const Navbar = () => {
             <AnimatePresence>
                 {menuOpen && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 w-full h-screen bg-white z-[90] flex flex-col justify-center items-center p-12 overflow-y-auto"
+                        initial={{ opacity: 0, x: "100%" }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: "100%" }}
+                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        className="fixed inset-0 w-full h-screen bg-white z-[90] flex flex-col pt-32 px-12 overflow-y-auto"
                     >
-                        <div className="flex flex-col items-center gap-8 w-full max-w-xs">
+                        <div className="flex flex-col items-center gap-6 w-full max-w-xs mx-auto">
                             {NAV_LINKS.map((link) => (
-                                <div key={link.name} className="w-full text-center border-b border-black/5 pb-4">
+                                <div key={link.name} className="w-full flex flex-col items-center border-b border-black/5 pb-4">
                                     {link.subLinks ? (
-                                        <div className="flex flex-col gap-4">
-                                            <button
-                                                onClick={() => setServicesOpen(!servicesOpen)}
-                                                className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-[0.3em]"
-                                            >
-                                                {link.name} <ChevronDown className={`w-4 h-4 transition-transform ${servicesOpen ? 'rotate-180' : ''}`} />
-                                            </button>
+                                        <div className="w-full flex flex-col items-center">
+                                            <div className="flex items-center justify-center gap-3 w-full">
+                                                <Link
+                                                    href={link.href}
+                                                    onClick={() => setMenuOpen(false)}
+                                                    className="text-sm font-bold uppercase tracking-[0.3em]"
+                                                >
+                                                    {link.name}
+                                                </Link>
+                                                <button
+                                                    onClick={() => setServicesOpen(!servicesOpen)}
+                                                    className="p-2"
+                                                >
+                                                    <ChevronDown className={`w-5 h-5 text-black/40 transition-transform duration-300 ${servicesOpen ? 'rotate-180' : ''}`} />
+                                                </button>
+                                            </div>
 
-                                            {servicesOpen && (
-                                                <div className="flex flex-col gap-3 pt-2">
-                                                    {link.subLinks.map((sub) => (
-                                                        <Link
-                                                            key={sub.id}
-                                                            href={sub.href}
-                                                            onClick={() => setMenuOpen(false)}
-                                                            className="text-xs uppercase tracking-widest text-black/40"
-                                                        >
-                                                            {sub.name}
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                            )}
+                                            <AnimatePresence>
+                                                {servicesOpen && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: "auto", opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        className="flex flex-col items-center gap-4 mt-4 w-full overflow-hidden"
+                                                    >
+                                                        {link.subLinks.map((sub) => (
+                                                            <Link
+                                                                key={sub.id}
+                                                                href={sub.href}
+                                                                onClick={() => setMenuOpen(false)}
+                                                                className="text-[10px] uppercase tracking-widest text-black/40 hover:text-[#d9a066]"
+                                                            >
+                                                                {sub.name}
+                                                            </Link>
+                                                        ))}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
                                     ) : (
                                         <Link

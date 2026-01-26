@@ -1,83 +1,155 @@
-import React from 'react';
-import { Instagram, Mail, Phone, ArrowUpRight } from "lucide-react";
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import { Instagram, Mail, Phone, ArrowUpRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Script from "next/script";
+import Image from "next/image";
+
+// 1. Veri tipini tanımlıyoruz
+interface ContactData {
+    id: number;
+    address: string;
+    phone: string;
+    email: string;
+    map_url: string;
+}
 
 const Footer = () => {
+    // 2. State'e bu tipi (veya null olabileceğini) belirtiyoruz
+    const [contactInfo, setContactInfo] = useState<ContactData | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchContact = async () => {
+            try {
+                const res = await fetch('https://ekolhome.smusa9883x.workers.dev/api/contact');
+                const data = await res.json();
+
+                if (data && data.length > 0) {
+                    // Veriyi temizleyip state'e aktarıyoruz
+                    const cleanData: ContactData = {
+                        ...data[0],
+                        phone: data[0].phone.replace(/[a-zA-Z]/g, '').trim(),
+                        email: data[0].email.split('sads')[0].trim()
+                    };
+                    setContactInfo(cleanData);
+                }
+            } catch (err) {
+                console.error("İletişim verileri çekilemedi:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchContact();
+    }, []);
+
     return (
-        <footer className="border-t border-black/10 px-6 md:px-12 py-16 bg-white">
-            <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12">
-                {/* Logo ve Tanıtım */}
-                <div className="space-y-4">
-                    <div className="text-2xl font-light tracking-tighter">
-                        EKOL<span className="font-thin italic lowercase">home</span>
+        <footer className="border-t border-neutral-100 px-6 md:px-12 py-20 bg-white relative overflow-hidden">
+            <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#d9a066]/5 blur-[120px] rounded-full -z-10" />
+
+            <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-16 md:gap-12">
+
+                {/* Logo Bölümü */}
+                <div className="space-y-8">
+                    <div className="relative w-56 h-32 transform -translate-x-2">
+                        <Image
+                            src="/ekolhomelogo.png"
+                            alt="EkolHome Logo"
+                            fill
+                            className="object-contain object-left"
+                            priority
+                        />
                     </div>
-                    <p className="text-xs text-gray-400 leading-relaxed max-w-xs uppercase tracking-wider">
-                        Nesiller boyu süren tekstil ustalığı ve modern tasarım anlayışı.
+                    <p className="text-[11px] text-neutral-400 leading-relaxed max-w-xs uppercase tracking-[0.2em] font-medium">
+                        Nesiller boyu süren tekstil ustalığı ve <br />
+                        <span className="text-[#d9a066]">modern tasarım</span> anlayışıyla mekanlara imza atıyoruz.
                     </p>
                 </div>
 
                 {/* İletişim Bilgileri */}
-                <div className="space-y-4">
-                    <Link
-                        href="/iletisim"
-                        className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gray-400 hover:text-black transition-colors"
-                    >
-                        İletişim
-                        <ArrowUpRight size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </Link>
+                <div className="space-y-6 flex flex-col justify-center">
+                    <div className="flex items-center gap-3">
+                        <div className="h-[1px] w-8 bg-[#d9a066]" />
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-[#d9a066] font-bold">Hızlı Erişim</span>
+                    </div>
 
-                    <div className="space-y-3 text-sm font-light text-gray-600">
-                        <a href="mailto:info@ekolhometekstil.com" className="flex items-center gap-3 hover:text-black transition-all">
-                            <Mail size={14} className="text-gray-400" />
-                            <span>info@ekolhometekstil.com</span>
-                        </a>
-                        <a href="tel:+905343214765" className="flex items-center gap-3 hover:text-black transition-all">
-                            <Phone size={14} className="text-gray-400" />
-                            <span>+90 534 321 47 65</span>
-                        </a>
+                    <div className="space-y-5">
+                        <div className="space-y-4 text-sm font-light text-neutral-500">
+                            {loading ? (
+                                <Loader2 className="animate-spin text-[#d9a066] w-4 h-4" />
+                            ) : (
+                                <>
+                                    <div className="flex items-start gap-3 group">
+                                        <Mail size={16} className="text-[#d9a066]/60 mt-1" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] uppercase tracking-tighter text-neutral-400">E-Posta</span>
+                                            <a href={`mailto:${contactInfo?.email}`} className="hover:text-[#d9a066] transition-all tracking-tight lowercase">
+                                                {contactInfo?.email}
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3 group">
+                                        <Phone size={16} className="text-[#d9a066]/60 mt-1" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] uppercase tracking-tighter text-neutral-400">Telefon</span>
+                                            <a href={`tel:${contactInfo?.phone}`} className="hover:text-[#d9a066] transition-all tracking-tight">
+                                                {contactInfo?.phone}
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <Link href="/iletisim" className="text-[10px] uppercase tracking-widest text-neutral-600 hover:text-black flex items-center gap-1 transition-all">
+                                            İletişim Formu <ArrowUpRight size={12} className="text-[#d9a066]" />
+                                        </Link>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* Sosyal Medya - BAYRAK VE SLOGAN BURADA */}
-                <div className="space-y-4">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Takip Edin</div>
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
-                            <a
-                                href="https://www.instagram.com/ekolhome"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center gap-2 text-sm font-light hover:text-black transition-all"
-                            >
-                                <Instagram size={18} className="text-gray-400 group-hover:text-black transition-colors" />
-                                <span className="group-hover:italic">Instagram</span>
-                            </a>
-                            
-                           
+                {/* Sosyal Medya */}
+                <div className="space-y-6 flex flex-col justify-center">
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-neutral-400 font-bold">Sosyal Mimari</div>
+
+                    <div className="flex flex-col gap-6">
+                        <a
+                            href="https://www.instagram.com/ekolhome_mobilya"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center gap-3 text-sm font-light text-neutral-600 hover:text-black transition-all"
+                        >
+                            <div className="p-3 bg-neutral-50 rounded-xl group-hover:bg-[#d9a066]/10 transition-colors">
+                                <Instagram size={20} className="text-neutral-400 group-hover:text-[#d9a066] transition-colors" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase tracking-widest text-neutral-400">Instagram</span>
+                                <span className="text-sm font-medium tracking-tight">@ekolhome_mobilya</span>
+                            </div>
+                        </a>
+
+                        <div className="pt-6 border-t border-neutral-100">
+                            <div className="text-[9px] uppercase tracking-[0.4em] text-[#d9a066] font-extrabold italic">
+                                Premium Textile Excellence
+                            </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <p className="text-[12px] font-black text-red-600 tracking-tighter uppercase">
-                            MERMİDEN HIZLI KOŞAN VARSA GELSİN İNDİRSİN
-                        </p>
-                            
-                             <svg width="24" height="16" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="1200" height="800" fill="#E30A17"/>
-                                <circle cx="425" cy="400" r="200" fill="#FFFFFF"/>
-                                <circle cx="475" cy="400" r="160" fill="#E30A17"/>
-                                <polygon points="735,400 605,442 655,331 655,469 605,358" fill="#FFFFFF"/>
-                            </svg>
-                        </div>
-                       
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-6xl mx-auto mt-16 pt-8 border-t border-black/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-gray-400">
-                <div>© 2026 EkolHome Tekstil. Tüm hakları saklıdır.</div>
-                <div className="flex gap-8 items-center">
-                    <a href="https://www.iubenda.com/privacy-policy/32672466" className="hover:text-black transition-colors">Gizlilik Politikası</a>
-                    <a href="#" className="hover:text-black transition-colors">Kullanım Koşulları</a>
+            {/* Alt Bilgi */}
+            <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-neutral-100 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] uppercase tracking-[0.3em] text-neutral-400">
+                <div className="text-center md:text-left leading-relaxed">
+                    © 2026 EkolHome Tekstil. <br className="md:hidden" />
+                    <span className="normal-case opacity-60 italic">{contactInfo?.address || "Yükleniyor..."}</span>
+                </div>
+                <div className="flex gap-6 items-center">
+                    <a href="https://www.iubenda.com/privacy-policy/32672466" className="hover:text-[#d9a066] transition-colors">Gizlilik</a>
+                    <a href="#" className="hover:text-[#d9a066] transition-colors">KVKK</a>
+                    <span className="text-[8px] opacity-40 font-bold ml-4">Excellence</span>
                 </div>
             </div>
 
