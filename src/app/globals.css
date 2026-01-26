@@ -88,3 +88,9 @@ body::before {
 .page-back {
   transform: rotateY(180deg);
 }
+
+.df-container {
+  /* veya dflip hangi sınıftaysa */
+  touch-action: pan-y;
+  /* veya none */
+}

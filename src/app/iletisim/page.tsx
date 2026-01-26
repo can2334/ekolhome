@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
-// API ve Form Linkleri
-const API_ENDPOINT = "https://ekolhome.smusa9883x.workers.dev/api/contact";
-const FORM_ENDPOINT = "https://formspree.io/f/mdaeoaza";
+// API Linkleri - Artık dış servis yok, her şey içeride
+const CONTACT_INFO_API = "https://ekolhome.smusa9883x.workers.dev/api/contact";
+const FORM_SUBMIT_API = "/api/contact"; // Az önce oluşturduğumuz route.ts
 
 interface ContactData {
     address: string;
@@ -20,7 +20,7 @@ export default function Contact() {
     useEffect(() => {
         const fetchContact = async () => {
             try {
-                const res = await fetch(API_ENDPOINT);
+                const res = await fetch(CONTACT_INFO_API);
                 const data = await res.json();
                 setContact(data[0]);
             } catch (err) {
@@ -33,13 +33,22 @@ export default function Contact() {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setStatus("sending");
+
         const formData = new FormData(e.currentTarget);
+        // Form verilerini JSON nesnesine çeviriyoruz
+        const payload = {
+            name: formData.get("name"),
+            email: formData.get("email"),
+            message: formData.get("message"),
+        };
 
         try {
-            const res = await fetch(FORM_ENDPOINT, {
+            const res = await fetch(FORM_SUBMIT_API, {
                 method: 'POST',
-                body: formData,
-                headers: { 'Accept': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
             });
 
             if (res.ok) {
@@ -50,6 +59,7 @@ export default function Contact() {
                 setStatus("error");
             }
         } catch (err) {
+            console.error("Gönderim hatası:", err);
             setStatus("error");
         }
     };
@@ -71,7 +81,9 @@ export default function Contact() {
                     transition={{ duration: 0.6 }}
                     className="max-w-3xl"
                 >
-
+                    <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4">
+                        Bize <span className="text-[#d9a066]">Ulaşın</span>
+                    </h1>
                 </motion.div>
             </div>
 
@@ -105,14 +117,15 @@ export default function Contact() {
                         </div>
                         <div className="group">
                             <span className="text-[10px] tracking-[0.5em] text-[#d9a066] uppercase font-bold block mb-3">E-Posta</span>
-                            <a href={`mailto:${contact.email}`} className="text-lg hover:text-[#d9a066] transition-colors font-extralight block">
-                                {contact.email}
+                            {/* Kurumsal mailini buraya sabitledim */}
+                            <a href={`mailto:info@ekolhome.com`} className="text-lg hover:text-[#d9a066] transition-colors font-extralight block uppercase">
+                                info@ekolhome.com
                             </a>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Sağ: Form - Hizalamayı sağlayan lg:mt-2 eklendi */}
+                {/* Sağ: Form */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -176,7 +189,12 @@ export default function Contact() {
                             </button>
                             {status === "success" && (
                                 <p className="text-[9px] text-green-600 font-bold uppercase tracking-widest animate-pulse">
-                                    ✓ Başarıyla iletildi.
+                                    ✓ Mesajınız Hostinger mail kutunuza gönderildi.
+                                </p>
+                            )}
+                            {status === "error" && (
+                                <p className="text-[9px] text-red-600 font-bold uppercase tracking-widest">
+                                    ✕ Bir hata oluştu, lütfen tekrar deneyin.
                                 </p>
                             )}
                         </div>
