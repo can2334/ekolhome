@@ -7,7 +7,7 @@ const WhatsAppChat = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [message, setMessage] = useState("");
 
-    const phoneNumber = "905343214765";
+    const phoneNumber = "905465434242";
 
     const handleSendMessage = () => {
         const cleanMessage = message || "Merhaba!";

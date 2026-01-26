@@ -4,14 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { X, Download } from "lucide-react";
 
-// --- TypeScript Hatalarını Gideren Bölüm ---
 declare global {
     interface Window {
         $: any;
         jQuery: any;
+        DFLIP: any;
     }
 }
-// ------------------------------------------
 
 export default function KatalogSayfasi() {
     const router = useRouter();
@@ -24,10 +23,13 @@ export default function KatalogSayfasi() {
         setIsMounted(true);
         const fetchKatalog = async () => {
             try {
-                const res = await fetch(`https://ekolhome.smusa9883x.workers.dev/api/catalog`);
+                // Cache engellemek için sonuna timestamp ekliyoruz
+                const res = await fetch(`https://ekolhome.smusa9883x.workers.dev/api/catalog?t=${Date.now()}`);
                 const data = await res.json();
-                if (data && data.length > 0) setPdfUrl(data[0].pdf_url);
-            } catch (err) { console.error("Hata:", err); }
+                if (data && data.length > 0) {
+                    setPdfUrl(data[0].pdf_url);
+                }
+            } catch (err) { console.error("Katalog yükleme hatası:", err); }
         };
         fetchKatalog();
 
@@ -42,8 +44,8 @@ export default function KatalogSayfasi() {
         if (!isMounted || !pdfUrl || !flipbookRef.current) return;
 
         const loadScripts = async () => {
-            // jQuery kontrolü ve yüklemesi
-            if (!(window as any).jQuery) {
+            // 1. jQuery Yükle
+            if (!window.jQuery) {
                 const jq = document.createElement("script");
                 jq.src = "https://code.jquery.com/jquery-3.6.0.min.js";
                 jq.async = false;
@@ -51,8 +53,16 @@ export default function KatalogSayfasi() {
                 await new Promise((resolve) => (jq.onload = resolve));
             }
 
-            // dFlip kontrolü ve yüklemesi
-            if (!(window as any).jQuery.fn.flipBook) {
+            // 2. dFlip Ayarları (Mobildeki hata için kritik!)
+            // Script yüklenmeden önce ayarları global olarak tanımlıyoruz
+            window.DFLIP = window.DFLIP || {};
+            window.DFLIP.defaults = {
+                webWorkerPath: '/dflip/js/libs/pdf.worker.min.js', // Dosyanın public klasöründe olduğundan emin ol
+                disableFontFace: false // Mobilde karakter hatasını önler
+            };
+
+            // 3. dFlip Scriptini Yükle
+            if (!window.jQuery.fn.flipBook) {
                 const df = document.createElement("script");
                 df.src = "/dflip/js/dflip.min.js";
                 df.async = false;
@@ -60,22 +70,32 @@ export default function KatalogSayfasi() {
                 await new Promise((resolve) => (df.onload = resolve));
             }
 
-            // Başlatma
-            if ((window as any).jQuery && flipbookRef.current) {
+            // 4. Başlatma
+            if (window.jQuery && flipbookRef.current) {
+                // Sayfanın tamamen render olmasını bekle
                 setTimeout(() => {
                     if (flipbookRef.current) {
-                        // Burada jQuery'yi tip güvenli çağırmak için (window as any) kullanıyoruz
-                        bookInstance.current = (window as any).jQuery(flipbookRef.current).flipBook(pdfUrl, {
-                            mode: 'fb',
+                        // Mevcut varsa temizle
+                        if (bookInstance.current) {
+                            try { bookInstance.current.dispose(); } catch (e) { }
+                        }
+
+                        bookInstance.current = window.jQuery(flipbookRef.current).flipBook(pdfUrl, {
+                            mode: 'fb', // Flipbook modu
                             layout: 3,
                             forceFit: true,
                             autoSize: true,
                             theme: "light",
+                            // PDF.js worker ayarı mobilde hata vermemesi için şart
                             webWorkerPath: '/dflip/js/libs/pdf.worker.min.js',
                             controls: "all",
+                            // Mobilde dokunmatik optimizasyonu
+                            isMobile: true,
+                            // Dosyaya erişim hatası için CORS'u atlatmaya çalışalım (Proxy gerektirebilir)
+                            annotationLayer: false, // Hataları azaltmak için kapatıyoruz
                         });
                     }
-                }, 500);
+                }, 800);
             }
         };
 
@@ -99,13 +119,17 @@ export default function KatalogSayfasi() {
             </div>
 
             <div className="absolute top-4 right-4 z-[10001]">
-                <a
-                    href={pdfUrl || "#"}
-                    download
-                    className="p-3 bg-white/90 backdrop-blur shadow-lg rounded-full text-black flex items-center justify-center"
-                >
-                    <Download size={20} />
-                </a>
+                {pdfUrl && (
+                    <a
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        className="p-3 bg-white/90 backdrop-blur shadow-lg rounded-full text-black flex items-center justify-center"
+                    >
+                        <Download size={20} />
+                    </a>
+                )}
             </div>
 
             <main className="w-full h-full flex items-center justify-center p-0 sm:p-4 md:p-8">
@@ -113,10 +137,11 @@ export default function KatalogSayfasi() {
                     {!pdfUrl ? (
                         <div className="flex flex-col items-center gap-2">
                             <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                            <span className="text-[9px] font-bold tracking-widest text-black/40">YÜKLENİYOR</span>
+                            <span className="text-[9px] font-bold tracking-widest text-black/40 uppercase">Yükleniyor...</span>
                         </div>
                     ) : (
-                        <div ref={flipbookRef} className="w-full h-full" id="df_book_container" />
+                        /* dFlip konteynırı */
+                        <div ref={flipbookRef} className="w-full h-full" id="df_book_container"></div>
                     )}
                 </div>
             </main>
@@ -133,6 +158,8 @@ export default function KatalogSayfasi() {
                 }
                 .df-book-wrapper { padding: 5px 0 !important; }
                 .df-ui-btn { color: #333 !important; }
+                /* Mobilde kaydırma hatasını (Intervention) önlemek için */
+                #df_book_container { touch-action: none; } 
                 @media (max-width: 768px) {
                     .df-ui-btn { width: 35px !important; }
                     .df-book-wrapper { margin: 0 !important; }
