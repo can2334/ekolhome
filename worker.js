@@ -309,9 +309,6 @@ export default {
 
                     console.log("=== LOGIN BAŞARILI ===");
 
-                    // 30 dakika (1800 saniye) geçerli olacak cookie
-                    const cookieValue = `admin_token=${newToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=1800`;
-
                     return new Response(
                         JSON.stringify({
                             success: true,
@@ -321,13 +318,7 @@ export default {
                                 username: user.username
                             }
                         }),
-                        {
-                            headers: {
-                                ...corsHeaders,
-                                "Content-Type": "application/json",
-                                "Set-Cookie": cookieValue
-                            }
-                        }
+                        { headers: corsHeaders }
                     );
 
                 } catch (error) {
